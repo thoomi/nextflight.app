@@ -1,52 +1,87 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
+import { z } from 'zod';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const envConfig = (() => {
+  const schema = z.object({
+    RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+    TO_EMAIL: z.string().min(1, 'TO_EMAIL is required'),
+    FROM_EMAIL: z.string().min(1, 'FROM_EMAIL is required'),
+  });
 
-// Expected env vars:
-// - RESEND_API_KEY: API key from Resend
-// - TO_EMAIL: recipient (e.g., hello@nextflightbetter.app)
-// - FROM_EMAIL: verified sender (e.g., "NextFlight <no-reply@nextflightbetter.app>")
+  const parsed = schema.safeParse(process.env);
+  if (!parsed.success) {
+    const message = parsed.error.errors.map((error) => error.message).join('; ');
+    throw new Error(`Subscribe handler misconfigured: ${message}`);
+  }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+  return parsed.data;
+})();
+
+const resend = new Resend(envConfig.RESEND_API_KEY);
+
+const requestSchema = z.object({
+  email: z.string().trim().email('Invalid email'),
+});
+
+const subject = 'New early access request';
+
+const escapeMap: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (char) => escapeMap[char] ?? char);
+
+const composeEmail = (email: string) => `
+  <div>
+    <p>New signup for NextFlight early access.</p>
+    <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+  </div>
+`;
+
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
   }
 
+  const payload =
+    typeof req.body === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(req.body);
+          } catch {
+            return undefined;
+          }
+        })()
+      : req.body;
+
+  const parsedPayload = requestSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    return res.status(400).json({ ok: false, error: 'Invalid email' });
+  }
+
   try {
-    const { email } = req.body || {};
-    if (typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ ok: false, error: 'Invalid email' });
-    }
-
-    if (!process.env.TO_EMAIL || !process.env.FROM_EMAIL) {
-      return res.status(500).json({ ok: false, error: 'Email not configured' });
-    }
-
-    const subject = 'New early access request';
-    const html = `
-      <div>
-        <p>New signup for NextFlight early access.</p>
-        <p><strong>Email:</strong> ${email}</p>
-      </div>
-    `;
+    const { email } = parsedPayload.data;
 
     const { error } = await resend.emails.send({
-      to: process.env.TO_EMAIL,
-      from: process.env.FROM_EMAIL,
+      to: envConfig.TO_EMAIL,
+      from: envConfig.FROM_EMAIL,
       subject,
-      html,
+      html: composeEmail(email),
     });
 
     if (error) {
-      return res.status(500).json({ ok: false, error: error.message || 'Send failed' });
+      throw new Error(error.message || 'Send failed');
     }
 
     return res.status(200).json({ ok: true });
-  } catch (err: any) {
-    return res.status(500).json({ ok: false, error: err?.message || 'Server error' });
+  } catch (err) {
+    console.error('Early access subscription failed', err);
+    return res.status(500).json({ ok: false, error: 'Server error' });
   }
 }
-
-

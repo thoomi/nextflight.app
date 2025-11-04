@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">NextFlight — Learn from your flights. Fly the next one better.</title>
+  <desc id="desc">Social preview card with the NextFlight logo and hero headline.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle overlay -->
+  <path d="M0 528 Q240 480 480 512 T960 496 T1200 520 V630 H0 Z" fill="rgba(148, 163, 184, 0.18)"/>
+
+  <!-- Logo -->
+  <g transform="translate(120 90) scale(5.81818)">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="22" height="22" aria-hidden="true">
+      <title>NextFlight logo</title>
+      <circle cx="22" cy="22" r="22" fill="#0f172a"/>
+      <path d="M 11.688 29.357 L 19.885 20.873" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M 23.643 24.795 L 30.349 17.86" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M 26.453 15.452 L 32.453 16.452 L 31.453 22.452" stroke="#fb923c" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M 11.074 26.988 C 16.877 23.506 24.613 23.506 30.416 26.988" stroke="rgba(255, 255, 255, .5)" stroke-linecap="round" fill="none" style="stroke-width: 2px;"/>
+    </svg>
+  </g>
+
+  <!-- Brand + hero copy -->
+  <g transform="translate(270 175)">
+    <text x="0" y="0" fill="#0f172a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="600" font-size="64">NextFlight</text>
+  </g>
+
+  <g transform="translate(120 320)">
+    <text x="0" y="0" fill="#0f172a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="80">Learn from your flights.</text>
+    <text x="0" y="92" fill="url(#accent)" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="76">Fly the next one better.</text>
+    <text x="0" y="178" fill="#334155" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="500" font-size="36">Upload your track and get a concise debrief for your next flight.</text>
+  </g>
+</svg>

@@ -5,32 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NextFlight — Learn from your flights. Fly the next one better.</title>
     <meta name="description" content="Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://nextflightbetter.app/" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="NextFlight" />
     <meta property="og:description" content="Upload your track and get a concise debrief for your next flight." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://nextflightbetter.app" />
-    <meta property="og:image" content="/assets/og.png" />
+    <meta property="og:site_name" content="NextFlight" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://nextflightbetter.app/assets/og.png" />
+    <meta property="og:image:secure_url" content="https://nextflightbetter.app/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="NextFlight — Learn from your flights. Fly the next one better." />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NextFlight" />
+    <meta name="twitter:description" content="Upload your track and get a concise debrief for your next flight." />
+    <meta name="twitter:image" content="https://nextflightbetter.app/assets/og.png" />
+    <meta name="twitter:image:alt" content="NextFlight — Learn from your flights. Fly the next one better." />
 
     <!-- Tailwind via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" href="/assets/favicon.ico" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "https://nextflightbetter.app/",
+        "name": "NextFlight",
+        "description": "Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "NextFlight",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://nextflightbetter.app/assets/logo.svg"
+          }
+        },
+        "potentialAction": {
+          "@type": "SubscribeAction",
+          "target": "https://nextflightbetter.app/#cta"
+        }
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-800">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:text-slate-900 focus:px-3 focus:py-2 focus:rounded-md">Skip to content</a>
 
     <!-- Nav -->
     <header class="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex items-center justify-between">
-      <div class="flex items-center gap-2 w-48 h-auto" aria-label="NextFlight logo">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="22" cy="22" r="22" class="fill-slate-900"></circle>
-          <path d="M11 29 L20 20" class="stroke-white" stroke-width="2.2" stroke-linecap="round"></path>
-          <path d="M24 24 L33 15" class="stroke-white" stroke-width="2.2" stroke-linecap="round"></path>
-          <path d="M27 14 L33 15 L32 21" class="stroke-orange-400" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
-          <path d="M12 26 C18 23, 26 23, 32 26" class="stroke-white/50" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
-        </svg>
+      <div class="flex items-center gap-2 w-48">
+        <img src="/assets/logo.svg" alt="NextFlight logo" class="h-11 w-11" />
         <span class="text-2xl font-semibold tracking-tight text-slate-900">NextFlight</span>
       </div>
       <nav class="hidden md:flex items-center gap-6 text-sm" aria-label="Primary">
@@ -49,17 +80,17 @@
             Learn from your flights.<br />
             <span class="text-orange-500">Fly the next one better.</span>
           </h1>
-          <p class="mt-5 text-lg text-slate-600 animate-fade-in" style="animation-delay:.1s">Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight.</p>
+          <p class="mt-5 text-lg text-slate-600 animate-fade-in animate-delay-100">Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight.</p>
 
           <!-- Email capture -->
-          <div id="cta" class="mt-7 animate-fade-in" style="animation-delay:.15s">
+          <div id="cta" class="mt-7 animate-fade-in animate-delay-150">
             <form id="early-access-form" class="flex flex-col sm:flex-row gap-3" method="post" novalidate>
               <label for="email" class="sr-only">Email address</label>
               <input id="email" name="email" type="email" required placeholder="you@pilot.email" class="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
               <button type="submit" class="rounded-2xl bg-slate-900 px-5 py-3 text-white shadow hover:shadow-md">Request early access</button>
             </form>
             <p id="form-help" class="mt-2 text-xs text-slate-500">No spam. We’ll only email you about the beta.</p>
-            <p id="form-status" class="mt-2 text-sm"></p>
+            <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
           </div>
 
           <!-- Trust bullets -->
@@ -71,7 +102,7 @@
         </div>
 
         <!-- Mock UI card -->
-        <div class="relative animate-fade-in-up" style="animation-delay:.2s">
+        <div class="relative animate-fade-in-up animate-delay-200">
           <div class="rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 p-5">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
@@ -81,32 +112,32 @@
               <span class="text-[10px] text-slate-400">sample</span>
             </div>
             <div class="mt-4 grid gap-4">
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="surface">
                 <div class="text-sm font-medium text-slate-700">Takeaway</div>
                 <div class="text-sm text-slate-600 mt-1">You left your strongest thermal early.</div>
               </div>
               <div class="grid sm:grid-cols-3 gap-3">
-                <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="surface">
                   <div class="text-xs font-medium text-slate-700">What went well</div>
                   <div class="text-xs text-slate-600 mt-1">Found lift fast and kept climb consistent.</div>
                 </div>
-                <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="surface">
                   <div class="text-xs font-medium text-slate-700">What to improve</div>
                   <div class="text-xs text-slate-600 mt-1">Commit to 2 more circles when ≥ +1.5 m/s.</div>
                 </div>
-                <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="surface">
                   <div class="text-xs font-medium text-slate-700">Mindset</div>
                   <div class="text-xs text-slate-600 mt-1">Widen slightly before bailing when it’s rough.</div>
                 </div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="surface">
                 <div class="text-xs font-medium text-slate-700">Best thermal</div>
                 <div class="text-xs text-slate-600 mt-1">+2.0 m/s at 05:21 — try nudging 30–50 m toward N (347°).</div>
               </div>
             </div>
           </div>
           <!-- floating badge -->
-          <div class="absolute -bottom-4 -right-3 rounded-2xl bg-orange-500 px-3 py-2 text-white text-xs shadow-lg animate-pop-in" style="animation-delay:.35s">
+          <div class="absolute -bottom-4 -right-3 rounded-2xl bg-orange-500 px-3 py-2 text-white text-xs shadow-lg animate-pop-in animate-delay-350">
             "Better next time"
           </div>
         </div>
@@ -117,9 +148,9 @@
     <section id="features" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">Why NextFlight</h2>
       <div class="mt-6 grid md:grid-cols-3 gap-5">
-        <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Instant, simple debrief</div><div class="text-sm text-slate-600 mt-1">Upload IGC/GPX → get a plain‑language summary in seconds.</div></div>
-        <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Actionable next step</div><div class="text-sm text-slate-600 mt-1">Always one clear improvement for your next flight.</div></div>
-        <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Beginner‑first, with depth</div><div class="text-sm text-slate-600 mt-1">Clean defaults now; deeper analytics later when you want them.</div></div>
+        <div class="card"><div class="text-sm font-medium text-slate-900">Instant, simple debrief</div><div class="text-sm text-slate-600 mt-1">Upload IGC/GPX → get a plain‑language summary in seconds.</div></div>
+        <div class="card"><div class="text-sm font-medium text-slate-900">Actionable next step</div><div class="text-sm text-slate-600 mt-1">Always one clear improvement for your next flight.</div></div>
+        <div class="card"><div class="text-sm font-medium text-slate-900">Beginner‑first, with depth</div><div class="text-sm text-slate-600 mt-1">Clean defaults now; deeper analytics later when you want them.</div></div>
       </div>
     </section>
 
@@ -127,16 +158,16 @@
     <section id="how" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">How it works</h2>
       <ol class="mt-6 grid md:grid-cols-3 gap-5 list-decimal list-inside">
-        <li class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Upload your track</div><div class="text-sm text-slate-600 mt-1">IGC / GPX from XCTrack, Flyskyhy, etc.</div></li>
-        <li class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Auto‑analyze</div><div class="text-sm text-slate-600 mt-1">Detect thermals, early exits, and centering tips.</div></li>
-        <li class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="text-sm font-medium text-slate-900">Get your takeaway</div><div class="text-sm text-slate-600 mt-1">One actionable step for your next flight.</div></li>
+        <li class="card"><div class="text-sm font-medium text-slate-900">Upload your track</div><div class="text-sm text-slate-600 mt-1">IGC / GPX from XCTrack, Flyskyhy, etc.</div></li>
+        <li class="card"><div class="text-sm font-medium text-slate-900">Auto‑analyze</div><div class="text-sm text-slate-600 mt-1">Detect thermals, early exits, and centering tips.</div></li>
+        <li class="card"><div class="text-sm font-medium text-slate-900">Get your takeaway</div><div class="text-sm text-slate-600 mt-1">One actionable step for your next flight.</div></li>
       </ol>
     </section>
 
     <!-- Privacy -->
     <section id="privacy" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">Privacy first</h2>
-      <div class="mt-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div class="mt-4 card">
         <p class="text-sm text-slate-600">You own your data. We keep uploads private by default and delete them on request.</p>
       </div>
     </section>
@@ -144,14 +175,8 @@
     <!-- Footer -->
     <footer class="mx-auto max-w-6xl px-4 sm:px-6 py-10">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-2 w-40" aria-label="NextFlight logo">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="22" cy="22" r="22" class="fill-slate-900"></circle>
-            <path d="M11 29 L20 20" class="stroke-white" stroke-width="2.2" stroke-linecap="round"></path>
-            <path d="M24 24 L33 15" class="stroke-white" stroke-width="2.2" stroke-linecap="round"></path>
-            <path d="M27 14 L33 15 L32 21" class="stroke-orange-400" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
-            <path d="M12 26 C18 23, 26 23, 32 26" class="stroke-white/50" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
-          </svg>
+        <div class="flex items-center gap-2 w-40">
+          <img src="/assets/logo.svg" alt="NextFlight logo" class="h-11 w-11" />
           <span class="text-xl font-semibold tracking-tight text-slate-900">NextFlight</span>
         </div>
         <div class="text-xs text-slate-500">© <span id="year"></span> NextFlight. Learn fast. Fly better next time.</div>
@@ -161,5 +186,3 @@
     <script src="/script.js"></script>
   </body>
   </html>
-
-

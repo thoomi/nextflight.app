@@ -1,3 +1,12 @@
+:root {
+  --nf-surface: #ffffff;
+  --nf-soft-surface: #f8fafc;
+  --nf-ring: #e2e8f0;
+  --nf-shadow: rgba(15, 23, 42, 0.08);
+  --nf-text-success: #047857;
+  --nf-text-error: #dc2626;
+}
+
 /* Custom animations (CSS-only) */
 @keyframes fade-in {
   from { opacity: 0 }
@@ -22,7 +31,56 @@
   animation: pop-in .6s ease forwards;
 }
 
+.animate-delay-100 { animation-delay: .1s; }
+.animate-delay-150 { animation-delay: .15s; }
+.animate-delay-200 { animation-delay: .2s; }
+.animate-delay-350 { animation-delay: .35s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-pop-in {
+    animation: none !important;
+  }
+
+  .animate-delay-100,
+  .animate-delay-150,
+  .animate-delay-200,
+  .animate-delay-350 {
+    animation-delay: 0s !important;
+  }
+}
+
+.card {
+  border-radius: 1.5rem;
+  background-color: var(--nf-surface);
+  padding: 1.25rem;
+  border: 1px solid var(--nf-ring);
+  box-shadow: 0 1px 2px var(--nf-shadow);
+}
+
+.surface {
+  border-radius: 1rem;
+  background-color: var(--nf-soft-surface);
+  padding: 1rem;
+}
+
+.form-status {
+  margin-top: .5rem;
+  font-size: .875rem;
+}
+.form-status--success { color: var(--nf-text-success); }
+.form-status--error { color: var(--nf-text-error); }
+
 /* Visually hidden utility for skip link (fallback if Tailwind not loaded early) */
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
-
-
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
