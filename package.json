@@ -1,0 +1,17 @@
+{
+  "name": "nextflight-landing",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "resend": "^2.4.0"
+  },
+  "devDependencies": {}
+}
+
+
