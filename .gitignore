@@ -16,5 +16,15 @@ yarn-error.log*
 # Mac/OS
 .DS_Store
 
+# Python
+tools/.venv/
+tools/__pycache__/
+tools/*.pyc
+tools/*.pyo
+tools/*.egg-info/
+*.pyc
+__pycache__/
+.venv/
+venv/
 
 .vercel
