@@ -86,6 +86,7 @@ The API uses Vercel serverless functions for email subscriptions.
    - `RESEND_API_KEY`: Get from [resend.com/api-keys](https://resend.com/api-keys)
    - `TO_EMAIL`: Your email to receive signup notifications
    - `FROM_EMAIL`: Verified sender in Resend (or `onboarding@resend.dev` for testing)
+   - `RESEND_AUDIENCE_ID`: Create an audience at [resend.com/audiences](https://resend.com/audiences) and copy its ID
 
 3. Install dependencies:
    ```bash
@@ -116,6 +117,7 @@ The API uses Vercel serverless functions for email subscriptions.
    vercel env add RESEND_API_KEY
    vercel env add TO_EMAIL
    vercel env add FROM_EMAIL
+   vercel env add RESEND_AUDIENCE_ID
    ```
 
 4. Deploy:

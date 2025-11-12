@@ -6,6 +6,7 @@ const envConfig = (() => {
     RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
     TO_EMAIL: z.string().min(1, 'TO_EMAIL is required'),
     FROM_EMAIL: z.string().min(1, 'FROM_EMAIL is required'),
+    RESEND_AUDIENCE_ID: z.string().min(1, 'RESEND_AUDIENCE_ID is required'),
   });
 
   const parsed = schema.safeParse(process.env);
@@ -68,15 +69,28 @@ export default async function handler(req: any, res: any) {
   try {
     const { email } = parsedPayload.data;
 
-    const { error } = await resend.emails.send({
+    // Send notification email
+    const { error: emailError } = await resend.emails.send({
       to: envConfig.TO_EMAIL,
       from: envConfig.FROM_EMAIL,
       subject,
       html: composeEmail(email),
     });
 
-    if (error) {
-      throw new Error(error.message || 'Send failed');
+    if (emailError) {
+      throw new Error(emailError.message || 'Notification email failed');
+    }
+
+    // Add contact to Resend Audience
+    const { error: audienceError } = await resend.contacts.create({
+      email,
+      audienceId: envConfig.RESEND_AUDIENCE_ID,
+      unsubscribed: false,
+    });
+
+    if (audienceError) {
+      // Log warning but don't fail the request - user was already notified
+      console.warn('Failed to add contact to audience:', audienceError.message);
     }
 
     return res.status(200).json({ ok: true });
