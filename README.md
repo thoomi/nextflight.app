@@ -100,30 +100,37 @@ The API uses Vercel serverless functions for email subscriptions.
 
 ## Deployment
 
-### Deploy to Vercel
+### Automatic Deployment (GitHub Actions)
 
-1. Install Vercel CLI:
-   ```bash
-   npm i -g vercel
-   ```
+The project automatically deploys to Vercel when you push to the `main` branch.
 
-2. Link your project:
-   ```bash
-   vercel link
-   ```
+**Setup (one-time):**
 
-3. Set environment variables in Vercel dashboard or CLI:
-   ```bash
-   vercel env add RESEND_API_KEY
-   vercel env add TO_EMAIL
-   vercel env add FROM_EMAIL
-   vercel env add RESEND_AUDIENCE_ID
-   ```
+1. Get your Vercel token from [vercel.com/account/tokens](https://vercel.com/account/tokens)
+2. Add `VERCEL_TOKEN` as a GitHub secret:
+   - Go to your repo → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `VERCEL_TOKEN`
+   - Value: Your Vercel token
+3. Set environment variables in Vercel dashboard for the API:
+   - `RESEND_API_KEY`
+   - `NOTIFICATION_EMAIL`
+   - `FROM_EMAIL`
+   - `RESEND_AUDIENCE_ID`
 
-4. Deploy:
-   ```bash
-   vercel --prod
-   ```
+**That's it!** Every push to `main` will automatically deploy to production.
+
+### Manual Deployment (CLI)
+
+You can also deploy manually using Vercel CLI:
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy to production
+vercel --prod
+```
 
 The `vercel.json` configuration automatically:
 - Serves static files from `frontend/`
