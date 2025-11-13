@@ -1,27 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Flight Debrief — Improved Version
-==================================
-Enhancements over original:
-- Fixed altitude fallback logic with validation
-- Module-level imports (statistics)
-- Named constants for all magic numbers
-- Improved heading initialization
-- Better moving average edge handling
-- GPS gap detection
-- Comprehensive type hints
-- Refactored thermal detection
-- Better early exit logic
+Flight Debrief
 
 Usage:
     python flight_debrief_improved.py myflight.igc [--json]
 """
+
 import math
 import statistics
 import sys
 from dataclasses import dataclass
-from typing import Optional
 
 # -------------------------------
 # Configuration Constants
@@ -84,7 +72,7 @@ class ThermalSegment:
     center_tip_bearing: float
     center_tip_dir: str
     early_exit: bool
-    early_exit_t: Optional[float]
+    early_exit_t: float | None
 
 
 @dataclass
@@ -92,10 +80,10 @@ class FlightSummary:
     """Complete flight analysis summary."""
 
     duration_total: float
-    max_alt: Optional[float]
+    max_alt: float | None
     segments: list[ThermalSegment]
-    time_to_first_thermal: Optional[float]
-    best: Optional[ThermalSegment]
+    time_to_first_thermal: float | None
+    best: ThermalSegment | None
     gps_gaps: int
 
 
@@ -104,9 +92,7 @@ class FlightSummary:
 # -------------------------------
 
 
-def parse_lat_lon_igc(
-    lat_str: str, lat_hem: str, lon_str: str, lon_hem: str
-) -> tuple[float, float]:
+def parse_lat_lon_igc(lat_str: str, lat_hem: str, lon_str: str, lon_hem: str) -> tuple[float, float]:
     """Parse IGC format lat/lon to decimal degrees."""
     # IGC lat: DDMMmmm (deg, minutes*1000), lon: DDDMMmmm
     dd = int(lat_str[0:2])
@@ -212,7 +198,7 @@ def parse_igc(path: str) -> list[TrackPoint]:
                 t = HH * 3600 + MM * 60 + SS
 
                 # Improved altitude parsing with validation
-                def _parse_alt(s: str) -> Optional[int]:
+                def _parse_alt(s: str) -> int | None:
                     try:
                         val = int(s)
                         # Basic sanity check for altitude
@@ -293,9 +279,7 @@ def compute_derived_metrics(
         vario[i] = dh / dti
 
         # Speed calculation
-        dist = haversine_m(
-            points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon
-        )
+        dist = haversine_m(points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon)
         speed[i] = dist / dti
 
         # Sanity check for speed
@@ -308,9 +292,7 @@ def compute_derived_metrics(
 
         # Heading calculation
         if dist > 0.5:  # Only calculate heading if moved significantly
-            h_curr = bearing_deg(
-                points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon
-            )
+            h_curr = bearing_deg(points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon)
             heading[i] = h_curr
 
             # Turn rate calculation
@@ -405,12 +387,10 @@ def detect_thermals(
 
                         # Direction changes
                         dir_changes = sum(
-                            1
-                            for k in range(start_idx + 1, end_idx + 1)
-                            if (turn_s[k] > 0) != (turn_s[k - 1] > 0)
+                            1 for k in range(start_idx + 1, end_idx + 1) if (turn_s[k] > 0) != (turn_s[k - 1] > 0)
                         )
 
-                        # Early exit detection (improved logic)
+                        # Early exit detection
                         end_v = vario_s[end_idx]
                         time_since_peak = points[end_idx].time_s - peak_t
 
@@ -418,8 +398,7 @@ def detect_thermals(
                         # 1. Peak was strong AND
                         # 2. (Still climbing well at exit OR left very soon after peak)
                         early_exit = peak_v >= STRONG_CLIMB_THRESHOLD and (
-                            end_v >= EXIT_CLIMB_THRESHOLD
-                            or time_since_peak < TIME_SINCE_PEAK_THRESHOLD
+                            end_v >= EXIT_CLIMB_THRESHOLD or time_since_peak < TIME_SINCE_PEAK_THRESHOLD
                         )
                         early_exit_t = points[end_idx].time_s if early_exit else None
 
@@ -472,11 +451,7 @@ def analyze(points: list[TrackPoint]) -> FlightSummary:
     duration_total = points[-1].time_s - points[0].time_s
     max_alt = max(p.alt_m for p in points) if points else None
     time_to_first = segments[0].start_t if segments else None
-    best = (
-        max(segments, key=lambda s: (s.avg_climb, s.max_climb))
-        if segments
-        else None
-    )
+    best = max(segments, key=lambda s: (s.avg_climb, s.max_climb)) if segments else None
 
     return FlightSummary(
         duration_total=duration_total,
@@ -493,7 +468,7 @@ def analyze(points: list[TrackPoint]) -> FlightSummary:
 # -------------------------------
 
 
-def format_time(seconds: Optional[float]) -> str:
+def format_time(seconds: float | None) -> str:
     """Format seconds as 'Xm Ys' string."""
     if seconds is None:
         return "-"
@@ -553,7 +528,7 @@ def debrief(summary: FlightSummary, as_json: bool = False) -> str:
     max_alt = summary.max_alt
 
     lines = []
-    lines.append("=== Quick Flight Debrief (improved heuristic) ===")
+    lines.append("=== Quick Flight Debrief ===")
     lines.append(f"Total duration      : {format_time(total_dur)}")
     lines.append(f"Max GPS altitude    : {int(round(max_alt)) if max_alt else '-'} m")
     lines.append(f"Thermals detected   : {len(segs)}")
@@ -564,12 +539,8 @@ def debrief(summary: FlightSummary, as_json: bool = False) -> str:
 
     if best:
         lines.append("— Best thermal —")
-        lines.append(
-            f"  Time window       : {format_time(best.start_t)} → {format_time(best.end_t)}"
-        )
-        lines.append(
-            f"  Peak climb        : {best.max_climb:.2f} m/s at {format_time(best.peak_t)}"
-        )
+        lines.append(f"  Time window       : {format_time(best.start_t)} → {format_time(best.end_t)}")
+        lines.append(f"  Peak climb        : {best.max_climb:.2f} m/s at {format_time(best.peak_t)}")
         lines.append(f"  Duration          : {format_time(best.duration_s)}")
         lines.append(f"  Avg climb         : {best.avg_climb:.2f} m/s")
         lines.append(f"  Circles (approx.) : {best.circles:.1f}")
@@ -580,9 +551,7 @@ def debrief(summary: FlightSummary, as_json: bool = False) -> str:
             f"(bearing {best.center_tip_bearing:.0f}°) from your circle center."
         )
         if best.early_exit:
-            lines.append(
-                f"  Early exit?       : Yes — likely around {format_time(best.early_exit_t)}"
-            )
+            lines.append(f"  Early exit?       : Yes — likely around {format_time(best.early_exit_t)}")
         else:
             lines.append("  Early exit?       : No clear signal")
     else:
@@ -602,21 +571,14 @@ def debrief(summary: FlightSummary, as_json: bool = False) -> str:
 
     # What to improve
     if best and best.max_climb >= 1.5 and best.duration_s < 70:
-        improve = (
-            "You likely exited your strongest climb early. "
-            "Commit to ~2 more circles when vario ≥ +1.5 m/s."
-        )
+        improve = "You likely exited your strongest climb early. Commit to ~2 more circles when vario ≥ +1.5 m/s."
     elif best and best.centering_std > 0.6 and best.circles >= 1.5:
-        improve = (
-            f"Centering consistency can improve. "
-            f"Drift ~30 m toward {best.center_tip_dir} where lift peaked."
-        )
+        improve = f"Centering consistency can improve. Drift ~30 m toward {best.center_tip_dir} where lift peaked."
     elif ttf is not None and ttf > 600:
         improve = "It took a while to find first lift. Probe windward edges of terrain triggers earlier."
     else:
         improve = (
-            "During climbs, widen slightly when it feels rough; "
-            "reassess after one calm circle instead of bailing."
+            "During climbs, widen slightly when it feels rough; reassess after one calm circle instead of bailing."
         )
     lines.append(f"• What to improve: {improve}")
 

@@ -84,6 +84,7 @@ Turn every paragliding flight into a bite-sized coaching session that builds ski
 
 **General Decisions**
 - Leaving thermal timing
+- Jumping over lift during glide (Would it have been worth turning in?)
 - Following other pilots vs independent decisions
 - Multiple lift source choices
 - Route selection under pressure

@@ -21,8 +21,11 @@ uv venv --python 3.14 .venv
 # Activate virtual environment
 source .venv/bin/activate
 
-# Install dependencies
-uv pip install -e .
+# Install dependencies (including dev dependencies for testing and linting)
+uv pip install -e ".[dev]"
+
+# Install pre-commit hooks (recommended for development)
+pre-commit install
 ```
 
 ### Development
@@ -36,6 +39,12 @@ ruff check .
 
 # Fix linting issues
 ruff check --fix .
+
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=flight_debrief --cov-report=term-missing
 ```
 
 ## Vision
