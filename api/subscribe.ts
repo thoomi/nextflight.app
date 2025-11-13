@@ -4,9 +4,9 @@ import { z } from 'zod';
 const envConfig = (() => {
   const schema = z.object({
     RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
-    TO_EMAIL: z.string().min(1, 'TO_EMAIL is required'),
-    FROM_EMAIL: z.string().min(1, 'FROM_EMAIL is required'),
     RESEND_AUDIENCE_ID: z.string().min(1, 'RESEND_AUDIENCE_ID is required'),
+    NOTIFICATION_EMAIL: z.string().email('NOTIFICATION_EMAIL must be valid').optional(),
+    FROM_EMAIL: z.string().email('FROM_EMAIL must be valid').optional(),
   });
 
   const parsed = schema.safeParse(process.env);
@@ -24,8 +24,6 @@ const requestSchema = z.object({
   email: z.string().trim().email('Invalid email'),
 });
 
-const subject = 'New early access request';
-
 const escapeMap: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
@@ -37,10 +35,12 @@ const escapeMap: Record<string, string> = {
 const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (char) => escapeMap[char] ?? char);
 
-const composeEmail = (email: string) => `
-  <div>
-    <p>New signup for NextFlight early access.</p>
+const composeNotificationEmail = (email: string, contactId?: string) => `
+  <div style="font-family: sans-serif;">
+    <h2>New NextFlight Early Access Signup</h2>
     <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+    ${contactId ? `<p><strong>Contact ID:</strong> ${escapeHtml(contactId)}</p>` : ''}
+    <p><strong>Time:</strong> ${new Date().toISOString()}</p>
   </div>
 `;
 
@@ -69,31 +69,37 @@ export default async function handler(req: any, res: any) {
   try {
     const { email } = parsedPayload.data;
 
-    // Send notification email
-    const { error: emailError } = await resend.emails.send({
-      to: envConfig.TO_EMAIL,
-      from: envConfig.FROM_EMAIL,
-      subject,
-      html: composeEmail(email),
-    });
-
-    if (emailError) {
-      throw new Error(emailError.message || 'Notification email failed');
-    }
-
-    // Add contact to Resend Audience
-    const { error: audienceError } = await resend.contacts.create({
+    // Add contact to Resend audience (primary action)
+    const { data, error: audienceError } = await resend.contacts.create({
       email,
       audienceId: envConfig.RESEND_AUDIENCE_ID,
       unsubscribed: false,
     });
 
     if (audienceError) {
-      // Log warning but don't fail the request - user was already notified
-      console.warn('Failed to add contact to audience:', audienceError.message);
+      // Handle duplicate email gracefully (user already subscribed)
+      if (audienceError.message?.includes('already exists')) {
+        return res.status(200).json({ ok: true, message: 'Already subscribed' });
+      }
+      throw new Error(audienceError.message || 'Failed to add contact to audience');
     }
 
-    return res.status(200).json({ ok: true });
+    // Send optional notification email if configured
+    if (envConfig.NOTIFICATION_EMAIL && envConfig.FROM_EMAIL) {
+      try {
+        await resend.emails.send({
+          from: envConfig.FROM_EMAIL,
+          to: envConfig.NOTIFICATION_EMAIL,
+          subject: 'New NextFlight Early Access Signup',
+          html: composeNotificationEmail(email, data?.id),
+        });
+      } catch (emailError) {
+        // Don't fail the request if notification email fails
+        console.error('Failed to send notification email:', emailError);
+      }
+    }
+
+    return res.status(200).json({ ok: true, contactId: data?.id });
   } catch (err) {
     console.error('Early access subscription failed', err);
     return res.status(500).json({ ok: false, error: 'Server error' });

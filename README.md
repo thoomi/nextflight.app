@@ -84,7 +84,7 @@ The API uses Vercel serverless functions for email subscriptions.
 
 2. Configure environment variables:
    - `RESEND_API_KEY`: Get from [resend.com/api-keys](https://resend.com/api-keys)
-   - `TO_EMAIL`: Your email to receive signup notifications
+   - `NOTIFICATION_EMAIL`: Your email to receive signup notifications
    - `FROM_EMAIL`: Verified sender in Resend (or `onboarding@resend.dev` for testing)
    - `RESEND_AUDIENCE_ID`: Create an audience at [resend.com/audiences](https://resend.com/audiences) and copy its ID
 
