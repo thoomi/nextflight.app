@@ -1,7 +1,10 @@
 """Tests for IGC parsing and helper functions."""
 
 from flight_debrief.core.flight_debrief import (
+    TrackPoint,
     bearing_deg,
+    calculate_avg_vario_window,
+    calculate_heading_change_window,
     compass_dir_from_bearing,
     haversine_m,
     moving_avg,
@@ -167,3 +170,75 @@ class TestCompassDirection:
         assert compass_dir_from_bearing(1.0) == "N"
         assert compass_dir_from_bearing(22.4) == "N"
         assert compass_dir_from_bearing(22.6) == "NE"
+
+
+class TestHeadingChangeWindow:
+    """Test rolling window heading change calculation."""
+
+    def test_first_point_returns_zero(self):
+        """Test that first point returns zero heading change."""
+        points = [TrackPoint(time_s=0.0, lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True)]
+        heading = [0.0]
+        result = calculate_heading_change_window(points, heading, 0, 30.0)
+        assert result == 0.0
+
+    def test_no_heading_change(self):
+        """Test with no heading change (straight line)."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(10)]
+        heading = [0.0] * 10  # Constant heading
+        result = calculate_heading_change_window(points, heading, 9, 30.0)
+        assert result == 0.0
+
+    def test_complete_circle(self):
+        """Test heading change for complete 360° circle."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(37)]
+        # Simulate 360° turn over 36 seconds (10° per second)
+        heading = [float(i * 10) % 360 for i in range(37)]
+        result = calculate_heading_change_window(points, heading, 36, 30.0)
+        # Should accumulate ~300° of turn in last 30 seconds
+        assert 290.0 < result <= 310.0
+
+    def test_window_boundary(self):
+        """Test that only points within window are counted."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(100)]
+        # First 60 seconds: no turn, last 40 seconds: 5°/s turn
+        heading = [0.0] * 60 + [float((i - 60) * 5) for i in range(60, 100)]
+        result = calculate_heading_change_window(points, heading, 99, 30.0)
+        # Should only count last 30 seconds: 30s * 5°/s = 150°
+        assert 145.0 < result <= 155.0
+
+
+class TestAvgVarioWindow:
+    """Test rolling window average vario calculation."""
+
+    def test_first_point(self):
+        """Test that first point returns its own vario."""
+        points = [TrackPoint(time_s=0.0, lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True)]
+        vario = [1.5]
+        result = calculate_avg_vario_window(points, vario, 0, 30.0)
+        assert result == 1.5
+
+    def test_constant_vario(self):
+        """Test with constant vario value."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(10)]
+        vario = [2.0] * 10
+        result = calculate_avg_vario_window(points, vario, 9, 30.0)
+        assert abs(result - 2.0) < 0.001
+
+    def test_varying_vario(self):
+        """Test with varying vario values."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(10)]
+        vario = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        result = calculate_avg_vario_window(points, vario, 9, 30.0)
+        # Average of all 10 values
+        expected = sum(vario) / len(vario)
+        assert abs(result - expected) < 0.001
+
+    def test_window_boundary(self):
+        """Test that only points within window are counted."""
+        points = [TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0, alt_valid=True) for i in range(100)]
+        # First 60 seconds: -1.0 m/s, last 40 seconds: +2.0 m/s
+        vario = [-1.0] * 60 + [2.0] * 40
+        result = calculate_avg_vario_window(points, vario, 99, 30.0)
+        # Should only average last 30 points (all +2.0 m/s)
+        assert abs(result - 2.0) < 0.001

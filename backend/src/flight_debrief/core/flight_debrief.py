@@ -17,9 +17,13 @@ from dataclasses import dataclass
 
 # Thermal Detection
 MIN_CLIMB_RATE = 0.4  # m/s - minimum average climb to consider thermal
-MIN_TURN_RATE = 5.0  # deg/s - minimum turn rate to detect circling
+MIN_TURN_RATE = 3.5  # deg/s - minimum turn rate to detect circling (lowered from 5.0 to match industry practices)
 MIN_THERMAL_DURATION = 18.0  # seconds - minimum time to qualify as thermal
 MIN_THERMAL_CLIMB_CHECK = 0.1  # m/s - instant climb threshold for thermal entry
+THERMAL_WINDOW_SECONDS = 30.0  # seconds - rolling window for heading change detection (XCTrack-style)
+MIN_HEADING_CHANGE = 90.0  # degrees - minimum heading change in window to detect thermal entry
+EXIT_HEADING_CHANGE = 30.0  # degrees - heading change below this indicates thermal exit
+EXIT_VARIO_THRESHOLD = -0.5  # m/s - vario threshold for confirming thermal exit
 
 # Smoothing
 VARIO_SMOOTH_WINDOW = 5  # points for vario smoothing
@@ -28,7 +32,7 @@ TURN_SMOOTH_WINDOW = 5  # points for turn rate smoothing
 # Early Exit Detection
 STRONG_CLIMB_THRESHOLD = 1.2  # m/s - peak climb considered "strong"
 EXIT_CLIMB_THRESHOLD = 0.8  # m/s - exit climb considered "still good"
-TIME_SINCE_PEAK_THRESHOLD = 6.0  # seconds - exit too soon after peak
+TIME_SINCE_PEAK_THRESHOLD = 12.0  # seconds - exit too soon after peak (increased from 6.0 to reduce false positives)
 
 # GPS Quality
 MAX_TIME_GAP = 10.0  # seconds - max gap before considering it a signal loss
@@ -168,6 +172,60 @@ def compass_dir_from_bearing(bearing: float) -> str:
     return dirs[idx]
 
 
+def calculate_heading_change_window(
+    points: list[TrackPoint], heading: list[float], index: int, window_seconds: float
+) -> float:
+    """
+    Calculate total heading change within a time window before the given index.
+    Uses XCTrack-style rolling window approach.
+
+    Returns total absolute heading change in degrees over the window.
+    """
+    if index < 1:
+        return 0.0
+
+    current_time = points[index].time_s
+    window_start_time = current_time - window_seconds
+
+    total_change = 0.0
+    i = index
+
+    # Walk backwards through points within the time window
+    while i > 0 and points[i].time_s >= window_start_time:
+        heading_diff = unwrap_angle_deg(heading[i - 1], heading[i])
+        total_change += abs(heading_diff)
+        i -= 1
+
+    return total_change
+
+
+def calculate_avg_vario_window(
+    points: list[TrackPoint], vario: list[float], index: int, window_seconds: float
+) -> float:
+    """
+    Calculate average vario within a time window before the given index.
+
+    Returns average vario in m/s over the window.
+    """
+    if index < 1:
+        return vario[index] if index == 0 else 0.0
+
+    current_time = points[index].time_s
+    window_start_time = current_time - window_seconds
+
+    vario_sum = 0.0
+    count = 0
+    i = index
+
+    # Walk backwards through points within the time window
+    while i >= 0 and points[i].time_s >= window_start_time:
+        vario_sum += vario[i]
+        count += 1
+        i -= 1
+
+    return vario_sum / count if count > 0 else 0.0
+
+
 # -------------------------------
 # IGC Parsing
 # -------------------------------
@@ -209,13 +267,13 @@ def parse_igc(path: str) -> list[TrackPoint]:
                 g_alt = _parse_alt(g_alt_str)
                 p_alt = _parse_alt(p_alt_str)
 
-                # Prefer GPS altitude, fallback to pressure altitude
+                # Prefer pressure altitude (more accurate, IGC standard), fallback to GPS altitude
                 # Track validity to handle missing data properly
-                if g_alt is not None:
-                    alt = float(g_alt)
-                    alt_valid = True
-                elif p_alt is not None:
+                if p_alt is not None:
                     alt = float(p_alt)
+                    alt_valid = True
+                elif g_alt is not None:
+                    alt = float(g_alt)
                     alt_valid = True
                 else:
                     # Skip points with no valid altitude data
@@ -315,9 +373,11 @@ def detect_thermals(
     dt: list[float],
     vario_s: list[float],
     turn_s: list[float],
+    heading: list[float],
 ) -> list[ThermalSegment]:
     """
-    Detect thermal segments using circling and climb criteria.
+    Detect thermal segments using rolling window approach (XCTrack-style).
+    Uses heading change over some time window instead of instantaneous turn rate.
     Returns list of detected thermals with metrics.
     """
     n = len(points)
@@ -328,8 +388,14 @@ def detect_thermals(
     acc_turn = 0.0
 
     for i in range(1, n):
-        turning = abs(turn_s[i]) > MIN_TURN_RATE
-        climbing = vario_s[i] > MIN_THERMAL_CLIMB_CHECK
+        # Rolling window calculations
+        heading_change = calculate_heading_change_window(points, heading, i, THERMAL_WINDOW_SECONDS)
+        avg_vario = calculate_avg_vario_window(points, vario_s, i, THERMAL_WINDOW_SECONDS)
+
+        # Entry condition: significant heading change AND not sinking
+        # XCTrack-style: ≥90° heading change in last 30s AND vario ≥-0.5 m/s
+        turning = heading_change >= MIN_HEADING_CHANGE
+        climbing = avg_vario >= EXIT_VARIO_THRESHOLD
 
         # Entry condition
         if not in_thermal and turning and climbing:
@@ -341,11 +407,30 @@ def detect_thermals(
         if in_thermal:
             acc_turn += abs(turn_s[i]) * dt[i]
 
-            # Exit condition
-            leaving = (not turning) or (vario_s[i] < 0.0)
+            # Exit conditions (multiple ways to exit):
+            # 1. Rolling window: stopped turning (<30° in 30s) OR sinking significantly (<-1.5 m/s avg)
+            # 2. Immediate: stopped turning instantaneously AND sinking (handles short breaks between thermals)
+            not_turning_window = heading_change < EXIT_HEADING_CHANGE
+            sinking_badly = avg_vario < -1.5
+
+            # Immediate exit: instant turn rate low AND instant vario negative
+            not_turning_instant = abs(turn_s[i]) < MIN_TURN_RATE
+            sinking_instant = vario_s[i] < 0
+            immediate_exit = not_turning_instant and sinking_instant
+
+            leaving = not_turning_window or sinking_badly or immediate_exit
 
             if leaving:
-                end_idx = i
+                # Rolling window exit creates lag - trim back to actual thermal end
+                # Look backwards to find where pilot actually stopped turning/climbing
+                actual_end_idx = i
+                for j in range(i - 1, start_idx, -1):
+                    # Find last point where pilot was actually thermalling
+                    if abs(turn_s[j]) > MIN_TURN_RATE and vario_s[j] > 0:
+                        actual_end_idx = j
+                        break
+
+                end_idx = actual_end_idx
                 dur = points[end_idx].time_s - points[start_idx].time_s
 
                 # Validate thermal duration
@@ -445,7 +530,7 @@ def analyze(points: list[TrackPoint]) -> FlightSummary:
     turn_s = moving_avg(turn_rate, TURN_SMOOTH_WINDOW)
 
     # Detect thermals
-    segments = detect_thermals(points, dt, vario_s, turn_s)
+    segments = detect_thermals(points, dt, vario_s, turn_s, heading)
 
     # Summary statistics
     duration_total = points[-1].time_s - points[0].time_s
