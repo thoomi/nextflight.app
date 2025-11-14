@@ -419,6 +419,7 @@ MILESTONE_FLIGHTS = 100       # count - experience milestone
 - **Altitude coloring** - Declining/improving heights, reveals inversion
 - **Decision quality** - Green=good, yellow=questionable, red=risky
 - **Ground projection** - Drift visualization (50% opacity track on terrain)
+- **KK7 terrain data coloring** - Experiment: Color terrain using kk7 map data to see if it provides additional context or insights for analysis
 
 ### Interactive Features
 - **Segment isolation** - Filter to specific time windows, hide clutter
@@ -426,6 +427,8 @@ MILESTONE_FLIGHTS = 100       # count - experience milestone
 - **Click for detail** - Detailed stats panel for clicked segment
 - **Compare view** - Split screen showing 2-4 pilots simultaneously
 - **Photo markers** - User photos overlaid at capture location/time
+- **Wind direction visualization** - Show wind direction indicators on the map to understand drift patterns and glide decisions
+- **Airspace boundaries overlay** - Display airspace limits to visualize proximity and compliance with restricted zones
 
 ### Mobile Optimization
 - Touch-friendly controls

@@ -51,3 +51,5 @@ share/python-wheels/
 
 .vercel
 .coverage
+.vscode/
+.ruff_cache/
