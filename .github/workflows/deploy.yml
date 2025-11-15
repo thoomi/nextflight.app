@@ -1,12 +1,22 @@
 name: Deploy to Vercel
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - frontend/**
+      - vercel.json
+      - package*.json
+      - .github/workflows/deploy.yml
   pull_request:
     branches:
       - main
+    paths:
+      - frontend/**
+      - vercel.json
+      - package*.json
 
 jobs:
   deploy:
