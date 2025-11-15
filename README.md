@@ -4,32 +4,6 @@ AI-powered flight debrief tool for paragliding pilots. Turn every flight into a 
 
 **Live Site:** [nextflightbetter.app](https://nextflightbetter.app)
 
-## Project Structure
-
-```
-nextflight.app/
-├── frontend/              # Landing page and future web app
-│   ├── assets/           # Images, logos, OG images
-│   ├── index.html        # Landing page
-│   ├── script.js         # Frontend JavaScript
-│   ├── styles.css        # Custom styles
-│   ├── robots.txt        # Search engine directives
-│   └── sitemap.xml       # Sitemap
-├── backend/              # Python analysis engine
-│   ├── api/             # API endpoints (future)
-│   ├── core/            # Flight analysis code
-│   │   └── flight_debrief.py
-│   ├── test/            # Sample IGC files for testing
-│   ├── docs/            # Product vision & technical docs
-│   ├── pyproject.toml   # Python dependencies
-│   └── README.md        # Backend-specific documentation
-├── api/                 # Vercel serverless functions
-│   └── subscribe.ts     # Email subscription endpoint
-├── .env.example         # Environment variable template
-├── vercel.json          # Vercel deployment configuration
-└── package.json         # Node.js dependencies
-```
-
 ## Development Setup
 
 ### Frontend (Landing Page)
@@ -136,49 +110,6 @@ The `vercel.json` configuration automatically:
 - Serves static files from `frontend/`
 - Routes API requests to `api/` serverless functions
 - Enables clean URLs and proper caching
-
-## Tech Stack
-
-### Frontend
-- HTML5 + Tailwind CSS (CDN)
-- Vanilla JavaScript
-- Static site (no build step)
-
-### Backend
-- Python 3.14
-- Pure Python (no external analysis dependencies)
-- Modern tooling: uv, ruff
-
-### API
-- TypeScript
-- Vercel Serverless Functions (Node.js 20.x)
-- Resend API for email
-- Zod for validation
-
-## Project Status
-
-### Completed
-✅ Landing page with email capture
-✅ Serverless subscribe endpoint
-✅ Python flight analysis engine (CLI)
-✅ Thermal detection algorithm
-✅ Sample IGC test files
-✅ Comprehensive product documentation
-
-### In Progress
-🚧 Web integration (file upload + visualization)
-🚧 User authentication
-🚧 Database for flight storage
-
-### Planned
-📋 2D/3D map visualization
-📋 Animated flight replay
-📋 Multi-flight progression tracking
-📋 Advanced coaching (speedbar, low-saves)
-📋 Instructor features
-📋 Optional AI narrative enhancement
-
-See [backend/docs/](backend/docs/) for detailed product vision and roadmap.
 
 ## Contributing
 

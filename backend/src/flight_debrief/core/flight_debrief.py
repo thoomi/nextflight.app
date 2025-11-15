@@ -385,7 +385,94 @@ def detect_thermals(
 
     in_thermal = False
     start_idx = 0
-    acc_turn = 0.0
+
+    def finalize_current_thermal(end_limit: int) -> None:
+        """Finalize the current thermal candidate up to the provided index."""
+        nonlocal in_thermal
+
+        if not in_thermal:
+            return
+
+        actual_end_idx = min(end_limit, n - 1)
+        if actual_end_idx <= start_idx:
+            in_thermal = False
+            return
+
+        def _turning_and_climbing(idx: int) -> bool:
+            return abs(turn_s[idx]) > MIN_TURN_RATE and vario_s[idx] > 0
+
+        if not _turning_and_climbing(actual_end_idx):
+            for j in range(actual_end_idx - 1, start_idx, -1):
+                if _turning_and_climbing(j):
+                    actual_end_idx = j
+                    break
+
+        dur = points[actual_end_idx].time_s - points[start_idx].time_s
+
+        if dur >= MIN_THERMAL_DURATION:
+            seg_slice = slice(start_idx, actual_end_idx + 1)
+            seg_vario = vario_s[seg_slice]
+            seg_turn = turn_s[seg_slice]
+
+            if not seg_vario:
+                in_thermal = False
+                return
+
+            avg_vario = sum(seg_vario) / len(seg_vario)
+            avg_turn_abs = sum(abs(x) for x in seg_turn) / len(seg_turn)
+
+            if avg_vario >= MIN_CLIMB_RATE and avg_turn_abs >= MIN_TURN_RATE:
+                peak_idx = max(range(start_idx, actual_end_idx + 1), key=lambda k: vario_s[k])
+                peak_t = points[peak_idx].time_s
+                peak_v = vario_s[peak_idx]
+
+                total_turn = sum(abs(turn_s[k]) * dt[k] for k in range(start_idx, actual_end_idx + 1))
+                circles = total_turn / 360.0
+
+                seg_points = points[seg_slice]
+                la_c = sum(p.lat for p in seg_points) / len(seg_points)
+                lo_c = sum(p.lon for p in seg_points) / len(seg_points)
+                brg_peak = bearing_deg(la_c, lo_c, points[peak_idx].lat, points[peak_idx].lon)
+                dir_label = compass_dir_from_bearing(brg_peak)
+
+                try:
+                    centering_std = statistics.pstdev(seg_vario)
+                except statistics.StatisticsError:
+                    centering_std = 0.0
+
+                dir_changes = sum(
+                    1 for k in range(start_idx + 1, actual_end_idx + 1) if (turn_s[k] > 0) != (turn_s[k - 1] > 0)
+                )
+
+                end_v = vario_s[actual_end_idx]
+                time_since_peak = points[actual_end_idx].time_s - peak_t
+
+                early_exit = peak_v >= STRONG_CLIMB_THRESHOLD and (
+                    end_v >= EXIT_CLIMB_THRESHOLD or time_since_peak < TIME_SINCE_PEAK_THRESHOLD
+                )
+                early_exit_t = points[actual_end_idx].time_s if early_exit else None
+
+                segments.append(
+                    ThermalSegment(
+                        start_idx=start_idx,
+                        end_idx=actual_end_idx,
+                        start_t=points[start_idx].time_s,
+                        end_t=points[actual_end_idx].time_s,
+                        duration_s=dur,
+                        avg_climb=avg_vario,
+                        max_climb=peak_v,
+                        peak_t=peak_t,
+                        circles=circles,
+                        dir_changes=dir_changes,
+                        centering_std=centering_std,
+                        center_tip_bearing=brg_peak,
+                        center_tip_dir=dir_label,
+                        early_exit=early_exit,
+                        early_exit_t=early_exit_t,
+                    )
+                )
+
+        in_thermal = False
 
     for i in range(1, n):
         # Rolling window calculations
@@ -401,12 +488,9 @@ def detect_thermals(
         if not in_thermal and turning and climbing:
             in_thermal = True
             start_idx = i
-            acc_turn = 0.0
 
         # Accumulate turn while in thermal
         if in_thermal:
-            acc_turn += abs(turn_s[i]) * dt[i]
-
             # Exit conditions (multiple ways to exit):
             # 1. Rolling window: stopped turning (<30° in 30s) OR sinking significantly (<-1.5 m/s avg)
             # 2. Immediate: stopped turning instantaneously AND sinking (handles short breaks between thermals)
@@ -422,93 +506,11 @@ def detect_thermals(
 
             if leaving:
                 # Rolling window exit creates lag - trim back to actual thermal end
-                # Look backwards to find where pilot actually stopped turning/climbing
-                actual_end_idx = i
-                for j in range(i - 1, start_idx, -1):
-                    # Find last point where pilot was actually thermalling
-                    if abs(turn_s[j]) > MIN_TURN_RATE and vario_s[j] > 0:
-                        actual_end_idx = j
-                        break
+                finalize_current_thermal(i)
 
-                end_idx = actual_end_idx
-                dur = points[end_idx].time_s - points[start_idx].time_s
-
-                # Validate thermal duration
-                if dur >= MIN_THERMAL_DURATION:
-                    # Calculate segment statistics
-                    seg_slice = slice(start_idx, end_idx + 1)
-                    seg_vario = vario_s[seg_slice]
-                    seg_turn = turn_s[seg_slice]
-
-                    if not seg_vario:  # Safety check
-                        in_thermal = False
-                        continue
-
-                    avg_vario = sum(seg_vario) / len(seg_vario)
-                    avg_turn_abs = sum(abs(x) for x in seg_turn) / len(seg_turn)
-
-                    # Validate thermal quality
-                    if avg_vario >= MIN_CLIMB_RATE and avg_turn_abs >= MIN_TURN_RATE:
-                        # Find peak climb
-                        peak_idx = max(range(start_idx, end_idx + 1), key=lambda k: vario_s[k])
-                        peak_t = points[peak_idx].time_s
-                        peak_v = vario_s[peak_idx]
-
-                        # Calculate circles
-                        circles = acc_turn / 360.0
-
-                        # Centering analysis
-                        seg_points = points[seg_slice]
-                        la_c = sum(p.lat for p in seg_points) / len(seg_points)
-                        lo_c = sum(p.lon for p in seg_points) / len(seg_points)
-                        brg_peak = bearing_deg(la_c, lo_c, points[peak_idx].lat, points[peak_idx].lon)
-                        dir_label = compass_dir_from_bearing(brg_peak)
-
-                        # Centering quality (stddev of vario)
-                        try:
-                            centering_std = statistics.pstdev(seg_vario)
-                        except statistics.StatisticsError:
-                            centering_std = 0.0
-
-                        # Direction changes
-                        dir_changes = sum(
-                            1 for k in range(start_idx + 1, end_idx + 1) if (turn_s[k] > 0) != (turn_s[k - 1] > 0)
-                        )
-
-                        # Early exit detection
-                        end_v = vario_s[end_idx]
-                        time_since_peak = points[end_idx].time_s - peak_t
-
-                        # Exit is "early" if:
-                        # 1. Peak was strong AND
-                        # 2. (Still climbing well at exit OR left very soon after peak)
-                        early_exit = peak_v >= STRONG_CLIMB_THRESHOLD and (
-                            end_v >= EXIT_CLIMB_THRESHOLD or time_since_peak < TIME_SINCE_PEAK_THRESHOLD
-                        )
-                        early_exit_t = points[end_idx].time_s if early_exit else None
-
-                        segments.append(
-                            ThermalSegment(
-                                start_idx=start_idx,
-                                end_idx=end_idx,
-                                start_t=points[start_idx].time_s,
-                                end_t=points[end_idx].time_s,
-                                duration_s=dur,
-                                avg_climb=avg_vario,
-                                max_climb=peak_v,
-                                peak_t=peak_t,
-                                circles=circles,
-                                dir_changes=dir_changes,
-                                centering_std=centering_std,
-                                center_tip_bearing=brg_peak,
-                                center_tip_dir=dir_label,
-                                early_exit=early_exit,
-                                early_exit_t=early_exit_t,
-                            )
-                        )
-
-                in_thermal = False
-                acc_turn = 0.0
+    # Flush final thermal if the flight ended mid-climb
+    if in_thermal:
+        finalize_current_thermal(n - 1)
 
     return segments
 
@@ -615,7 +617,7 @@ def debrief(summary: FlightSummary, as_json: bool = False) -> str:
     lines = []
     lines.append("=== Quick Flight Debrief ===")
     lines.append(f"Total duration      : {format_time(total_dur)}")
-    lines.append(f"Max GPS altitude    : {int(round(max_alt)) if max_alt else '-'} m")
+    lines.append(f"Max GPS altitude    : {int(round(max_alt)) if max_alt is not None else '-'} m")
     lines.append(f"Thermals detected   : {len(segs)}")
     lines.append(f"Time to first lift  : {format_time(ttf)}")
 

@@ -1,8 +1,10 @@
 """Tests for flight analysis functions."""
 
 from flight_debrief.core.flight_debrief import (
+    FlightSummary,
     TrackPoint,
     compute_derived_metrics,
+    debrief,
     detect_thermals,
 )
 
@@ -268,6 +270,32 @@ class TestThermalDetection:
         thermals = detect_thermals(points, dt, vario_s, turn_s, heading)
         assert len(thermals) == 2
 
+    def test_thermal_detected_when_flight_ends_mid_climb(self):
+        """Ensure we capture a thermal even if the flight ends while circling."""
+        n = 70
+        points = [
+            TrackPoint(time_s=float(i), lat=47.5, lon=7.5, alt_m=1000.0 + i * 0.5, alt_valid=True) for i in range(n)
+        ]
+        dt = [1.0] * n
+        vario_s = [-0.2] * 5 + [0.8] * (n - 5)  # Rolling entry, then solid climb
+        turn_s = [0.0] * 5 + [9.0] * (n - 5)
+
+        heading = []
+        current_heading = 0.0
+        for i in range(n):
+            if i < 5:
+                heading.append(current_heading)
+            else:
+                current_heading = (current_heading + 9.0) % 360
+                heading.append(current_heading)
+
+        thermals = detect_thermals(points, dt, vario_s, turn_s, heading)
+        assert len(thermals) == 1
+
+        thermal = thermals[0]
+        assert thermal.end_idx == n - 1  # Should extend to end-of-track
+        assert thermal.duration_s >= 18.0
+
     def test_early_exit_detection_strong_peak(self):
         """Test early exit detection when leaving strong thermal."""
         # Pre-entry 5s, thermal with strong peak 35s, early exit 5s
@@ -326,3 +354,21 @@ class TestThermalDetection:
         # Note: early_exit detection depends on exit time relative to peak
         # Just verify the values exist and are valid
         assert thermal.early_exit_t is None or thermal.early_exit_t > 0
+
+
+class TestDebriefFormatting:
+    """Test formatting edge-cases for the debrief output."""
+
+    def test_debrief_shows_zero_altitude(self):
+        """Ensure altitude 0m prints instead of '-'."""
+        summary = FlightSummary(
+            duration_total=120.0,
+            max_alt=0.0,
+            segments=[],
+            time_to_first_thermal=None,
+            best=None,
+            gps_gaps=0,
+        )
+
+        text = debrief(summary, as_json=False)
+        assert "Max GPS altitude    : 0 m" in text
