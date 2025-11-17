@@ -58,6 +58,15 @@ Turn every paragliding flight into a bite-sized coaching session that builds ski
 - Altitude lost vs distance covered
 - Better line possibilities (±50-150m lateral samples)
 
+**Soaring-Only Sessions**
+- Detect ridge/soaring flights (long segments with small heading change + positive vario)
+- Grade time spent in laminar lift vs off-line excursions
+- Drift management: did pilot maintain wind-corrected track or slowly fall off the ridge band?
+- Ridge exit analysis: “You left the lift band while still in +0.6m/s—stay another 2 turns next time”
+- “Turn discipline” coaching: flag tight turns performed while still in lift (unnecessary corrections)
+- Wind strategy: groundspeed vs heading to suggest when to speedbar or slow down along the ridge
+- Quick summary tag: “Soaring session detected — no discrete thermals”
+
 **Wind & Speed Strategy**
 - Groundspeed variations: speed bar usage patterns
 - Drift at altitude: upwind vs downwind pattern
