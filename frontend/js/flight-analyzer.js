@@ -484,23 +484,15 @@ function analyze(points) {
 }
 
 /**
- * Format time in seconds as human-readable string
- * @param {number|null} seconds - Time in seconds
- * @returns {string} - Formatted time (e.g., "5m 30s")
- */
-function formatTime(seconds) {
-    if (seconds === null || seconds === undefined) return '-';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}m ${s}s`;
-}
-
-/**
  * Generate coaching feedback based on analysis
+ * Matches the sophisticated logic from Python backend implementation
  * @param {FlightSummary} summary - Flight analysis summary
- * @returns {Object} - Coaching feedback sections
+ * @returns {Object} - Coaching feedback sections with arrays for extensibility
  */
 function generateCoaching(summary) {
+    const best = summary.best;
+    const ttf = summary.timeToFirstThermal;
+
     const coaching = {
         whatWentWell: [],
         whatToImprove: [],
@@ -508,46 +500,52 @@ function generateCoaching(summary) {
         nextFlightPlan: []
     };
 
-    // What went well
-    if (summary.timeToFirstThermal !== null && summary.timeToFirstThermal < 300) {
-        coaching.whatWentWell.push('Found lift quickly (<5 min)');
-    }
-    if (summary.best && summary.best.avgClimb > 0.6) {
-        coaching.whatWentWell.push(`Solid average climb (${summary.best.avgClimb.toFixed(1)} m/s)`);
-    }
-    if (summary.best && summary.best.centeringStd < 0.4) {
-        coaching.whatWentWell.push('Good centering consistency');
+    // What went well - prioritized logic matching Python
+    if (best && best.avgClimb > 0.6) {
+        coaching.whatWentWell.push('You found usable lift and maintained a solid average climb.');
+    } else if (ttf !== null && ttf < 300) {
+        coaching.whatWentWell.push('You found lift quickly after launch — good scanning and line choice.');
+    } else {
+        coaching.whatWentWell.push('You kept the flight smooth; building airtime matters.');
     }
 
-    // What to improve
-    const earlyExits = summary.segments.filter(s => s.earlyExit);
-    if (earlyExits.length > 0) {
-        coaching.whatToImprove.push(
-            `Early exits: Commit to 2 more circles when vario ≥${CONFIG.STRONG_CLIMB_THRESHOLD} m/s`
-        );
+    // Additional positive observations
+    if (best && best.centeringStd < 0.4) {
+        coaching.whatWentWell.push('Good centering consistency.');
     }
-    if (summary.best && summary.best.centeringStd > 0.6) {
+
+    // What to improve - specific scenarios matching Python
+    if (best && best.maxClimb >= 1.5 && best.durationS < 70) {
         coaching.whatToImprove.push(
-            `Centering: Drift ~${CONFIG.CENTERING_TIP_DISTANCE} toward ${summary.best.centerTipDir}`
+            'You likely exited your strongest climb early. Commit to ~2 more circles when vario ≥ +1.5 m/s.'
+        );
+    } else if (best && best.centeringStd > 0.6 && best.circles >= 1.5) {
+        coaching.whatToImprove.push(
+            `Centering consistency can improve. Drift ~30 m toward ${best.centerTipDir} where lift peaked.`
+        );
+    } else if (ttf !== null && ttf > 600) {
+        coaching.whatToImprove.push(
+            'It took a while to find first lift. Probe windward edges of terrain triggers earlier.'
+        );
+    } else {
+        coaching.whatToImprove.push(
+            'During climbs, widen slightly when it feels rough; reassess after one calm circle instead of bailing.'
         );
     }
 
-    // Safety/Mindset
+    // Safety/Mindset - core message with additional context
+    coaching.safetyMindset.push(
+        'Turbulence discomfort is normal. Breathe, loosen grip, and re-center before leaving lift.'
+    );
     if (summary.gpsGaps > 0) {
-        coaching.safetyMindset.push(`GPS signal gaps detected (${summary.gpsGaps})`);
-    }
-    if (earlyExits.length > summary.segments.length * 0.5) {
-        coaching.safetyMindset.push('Consider: Are you bailing due to turbulence discomfort?');
+        coaching.safetyMindset.push(`⚠ GPS signal gaps detected (${summary.gpsGaps}).`);
     }
 
-    // Next-flight plan
-    if (earlyExits.length > 0) {
-        coaching.nextFlightPlan.push(
-            `When climb ≥${CONFIG.STRONG_CLIMB_THRESHOLD} m/s, stay for 2 additional circles`
-        );
-    }
-    if (summary.best && summary.best.centeringStd > 0.6) {
-        coaching.nextFlightPlan.push('Practice centering toward smoother/stronger climb');
+    // Next-flight plan - actionable based on performance
+    if (best && best.maxClimb >= 1.2) {
+        coaching.nextFlightPlan.push('When climb ≥ +1.2 m/s, stay for two additional circles before leaving.');
+    } else {
+        coaching.nextFlightPlan.push('Pick one strong trigger; explore thoroughly before moving on.');
     }
 
     return coaching;
