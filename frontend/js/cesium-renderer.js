@@ -210,12 +210,12 @@ class CesiumRenderer {
         // Configure camera controls for better flight visualization
         this.configureCameraControls();
 
-        // Set initial camera view
+        // Set initial camera view - full globe view
         this.viewer.camera.setView({
-            destination: Cesium.Cartesian3.fromDegrees(7.8, 48.0, APP_CONFIG.camera.initialViewDistance),
+            destination: Cesium.Cartesian3.fromDegrees(0, 30, 20000000), // View from 20,000 km altitude
             orientation: {
                 heading: 0.0,
-                pitch: -Cesium.Math.PI_OVER_FOUR,
+                pitch: -Math.PI / 2, // Looking straight down
                 roll: 0.0
             }
         });

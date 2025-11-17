@@ -71,11 +71,8 @@ async function loadSampleTrack() {
 
         appState.setCurrentAnalysis(analysis);
 
-        // Render
+        // Render (automatically flies to track after rendering)
         await appState.renderer.render(analysis);
-
-        // Fly to track after render is complete
-        appState.renderer.flyToTrack(analysis.points);
 
         // Show UI
         setVisible(DOM_IDS.uploadStatus, false);
