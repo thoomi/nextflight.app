@@ -72,7 +72,7 @@ class AltitudeChart {
         ctx.clearRect(0, 0, width, height);
 
         // Margins
-        const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+        const margin = { top: 5, right: 10, bottom: 15, left: 40 };
         const chartWidth = width - margin.left - margin.right;
         const chartHeight = height - margin.top - margin.bottom;
 
@@ -99,8 +99,8 @@ class AltitudeChart {
             this.drawAnnotationMarkers(ctx, xScale, yScale, margin, chartHeight);
         }
 
-        // Draw hover indicator
-        if (this.hoveredPoint !== null) {
+        // Draw hover indicator (only if replay is not active)
+        if (this.hoveredPoint !== null && this.replayPointIndex === null) {
             this.drawHoverIndicator(ctx, this.hoveredPoint, xScale, yScale, margin, chartHeight);
         }
 
@@ -152,7 +152,7 @@ class AltitudeChart {
             ctx.fillStyle = '#64748b';
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'right';
-            ctx.fillText(`${alt}m`, margin.left - 5, y + 3);
+            ctx.fillText(`${alt}`, margin.left - 5, y + 3);
         }
 
         // Vertical grid lines (time)
@@ -165,12 +165,16 @@ class AltitudeChart {
             ctx.lineTo(x, margin.top + height);
             ctx.stroke();
 
-            // Time label
-            const minutes = Math.floor(time / 60);
+            // Time label (format as HH:MM using actual time of day)
+            const startTimeS = this.flightData.points.startTimeS || 0;
+            const actualTimeS = (startTimeS + time) % 86400; // Wrap at 24 hours
+            const hours = Math.floor(actualTimeS / 3600);
+            const minutes = Math.floor((actualTimeS % 3600) / 60);
+            const timeLabel = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             ctx.fillStyle = '#64748b';
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`${minutes}m`, x, margin.top + height + 15);
+            ctx.fillText(timeLabel, x, margin.top + height + 15);
         }
 
         // Axes
@@ -188,18 +192,6 @@ class AltitudeChart {
         ctx.moveTo(margin.left, margin.top + height);
         ctx.lineTo(margin.left + width, margin.top + height);
         ctx.stroke();
-
-        // Labels
-        ctx.fillStyle = '#475569';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Time', margin.left + width / 2, margin.top + height + 28);
-
-        ctx.save();
-        ctx.translate(15, margin.top + height / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('Altitude (m)', 0, 0);
-        ctx.restore();
     }
 
     /**
@@ -254,24 +246,6 @@ class AltitudeChart {
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fill();
-
-        // Tooltip
-        const vario = this.flightData.vario[pointIndex];
-        const speed = this.flightData.speed[pointIndex];
-        const minutes = Math.floor(point.timeS / 60);
-        const seconds = Math.floor(point.timeS % 60);
-
-        const tooltip = `${minutes}m ${seconds}s | ${Math.round(point.altM)}m | ${vario >= 0 ? '+' : ''}${vario.toFixed(1)} m/s | ${speed.toFixed(1)} km/h`;
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.font = '11px sans-serif';
-        const textWidth = ctx.measureText(tooltip).width;
-        const tooltipX = Math.min(x, this.displayWidth - textWidth - 15);
-        const tooltipY = Math.max(20, y - 25);
-
-        ctx.fillRect(tooltipX - 5, tooltipY - 15, textWidth + 10, 20);
-        ctx.fillStyle = 'white';
-        ctx.fillText(tooltip, tooltipX, tooltipY);
     }
 
     /**

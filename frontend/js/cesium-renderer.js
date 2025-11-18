@@ -730,7 +730,7 @@ class CesiumRenderer {
                 outlineColor: Cesium.Color.WHITE,
                 outlineWidth: outlineWidth,
                 disableDepthTestDistance: Number.POSITIVE_INFINITY,
-                scaleByDistance: new Cesium.NearFarScalar(100, 1.0, 5000, 0.6)
+                scaleByDistance: new Cesium.NearFarScalar(100, 1.0, 3000, 0.5)
             }
         };
 
@@ -741,7 +741,7 @@ class CesiumRenderer {
                 verticalOrigin: Cesium.VerticalOrigin.CENTER,
                 pixelOffset: new Cesium.Cartesian2(0, -20),
                 disableDepthTestDistance: Number.POSITIVE_INFINITY,
-                scaleByDistance: new Cesium.NearFarScalar(100, 1.0, 5000, 0.6)
+                scaleByDistance: new Cesium.NearFarScalar(100, 1.0, 3000, 0.5)
             };
         }
 

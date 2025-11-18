@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Flight Visualizer — NextFlight</title>
     <meta name="description" content="3D flight visualization and analysis for paragliding flights" />
     <meta name="theme-color" content="#0f172a" />
@@ -74,6 +74,14 @@
         border-bottom: 1px solid #e2e8f0;
         background: #f8fafc;
         padding: 0 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .bottom-bar-tabs::-webkit-scrollbar {
+        display: none;
       }
 
       .tab-btn {
@@ -87,6 +95,8 @@
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
         transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .tab-btn:hover {
@@ -130,7 +140,7 @@
       }
 
       .bottom-bar-content {
-        height: 200px;
+        height: 120px;
       }
 
       .resize-handle {
@@ -139,6 +149,7 @@
         cursor: ns-resize;
         position: relative;
         flex-shrink: 0;
+        touch-action: none;
       }
 
       .resize-handle::before {
@@ -191,6 +202,8 @@
         gap: 12px;
         background: #ffffff;
         flex-shrink: 0;
+        position: relative;
+        z-index: 2000;
       }
 
       /* Floating Elements */
@@ -436,6 +449,102 @@
         .legend-panel {
           display: none !important;
         }
+
+        /* Mobile replay controls - single compact row */
+        .replay-controls {
+          padding: 8px 10px;
+          gap: 8px;
+          /* Use safe area insets + extra space for Chrome menu */
+          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
+        }
+
+        /* Hide timeline on mobile */
+        #replayTimeline {
+          display: none;
+        }
+
+        /* Hide resize handle on mobile */
+        .resize-handle {
+          display: none;
+        }
+
+        /* Scrollable tabs with fade indicator */
+        .bottom-bar-tabs {
+          position: relative;
+          padding-right: 40px;
+        }
+
+        .bottom-bar-tabs::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 40px;
+          background: linear-gradient(to right, transparent, #f8fafc);
+          pointer-events: none;
+        }
+
+        .tab-btn {
+          font-size: 11px;
+          padding: 10px 12px;
+        }
+
+        .collapse-btn {
+          position: sticky;
+          right: 0;
+          margin-left: auto;
+          background: #f8fafc;
+          z-index: 10;
+        }
+
+        /* Adjust layout order for better UX */
+        #collapseBtn {
+          order: 1;
+          margin-right: 0 !important;
+        }
+
+        #replayResetBtn {
+          order: 2;
+        }
+
+        #replayPlayBtn {
+          order: 3;
+        }
+
+        #replayEndBtn {
+          order: 4;
+        }
+
+        #replayTime {
+          order: 5;
+          flex: 1;
+          min-width: 60px;
+          text-align: center;
+          font-size: 11px;
+        }
+
+        #replaySpeed {
+          order: 6;
+          font-size: 11px;
+          padding: 5px 8px;
+          min-width: 42px;
+        }
+
+        /* Make buttons compact on mobile */
+        .replay-btn {
+          width: 32px;
+          height: 32px;
+        }
+
+        .collapse-btn {
+          padding: 6px;
+        }
+
+        .collapse-btn svg {
+          width: 14px;
+          height: 14px;
+        }
       }
 
       /* Compass */
@@ -543,6 +652,140 @@
         font-size: 14px;
         font-weight: 600;
         color: #0f172a;
+      }
+
+      /* Annotation Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 400px;
+        width: calc(100% - 40px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        animation: modalSlideIn 0.2s ease-out;
+        position: relative;
+        z-index: 1;
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          right: 20px;
+          width: auto;
+          max-width: none;
+          margin: 0;
+        }
+
+        .modal-overlay {
+          align-items: flex-end;
+          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 16px;
+      }
+
+      .modal-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #0f172a;
+        outline: none;
+        transition: all 0.2s;
+        box-sizing: border-box;
+      }
+
+      .modal-input:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        justify-content: flex-end;
+      }
+
+      .modal-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .modal-btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
+      .modal-btn-cancel:hover {
+        background: #e2e8f0;
+      }
+
+      .modal-btn-confirm {
+        background: #f97316;
+        color: white;
+      }
+
+      .modal-btn-confirm:hover {
+        background: #ea580c;
+      }
+
+      .modal-btn-confirm:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
       }
     </style>
   </head>
@@ -747,6 +990,24 @@
             <div id="replayHandle" class="replay-handle" style="left: 0%"></div>
           </div>
           <div id="replayTime" class="replay-time">0:00 / 0:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annotation Modal -->
+    <div id="annotationModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">Add Annotation</h3>
+        <input
+          type="text"
+          id="annotationInput"
+          class="modal-input"
+          placeholder="Enter your note..."
+          maxlength="100"
+        />
+        <div class="modal-actions">
+          <button id="annotationCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+          <button id="annotationConfirmBtn" class="modal-btn modal-btn-confirm">Add</button>
         </div>
       </div>
     </div>

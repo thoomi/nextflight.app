@@ -134,6 +134,9 @@ function parseIGC(content) {
         points[i].timeS = unwrappedTimes[i] - t0;
     }
 
+    // Store the start time (seconds since midnight) for display purposes
+    points.startTimeS = t0;
+
     return points;
 }
 

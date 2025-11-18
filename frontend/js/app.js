@@ -981,16 +981,76 @@ function findClosestPointOnTrack(lat, lon) {
 }
 
 /**
- * Prompt for annotation text
+ * Prompt for annotation text using custom modal
  * @param {Object} pointData - Point data with index and point
  */
 function promptForAnnotation(pointData) {
-    const text = prompt('Enter annotation:');
+    const modal = document.getElementById('annotationModal');
+    const input = document.getElementById('annotationInput');
+    const confirmBtn = document.getElementById('annotationConfirmBtn');
+    const cancelBtn = document.getElementById('annotationCancelBtn');
 
-    if (text && text.trim()) {
-        addAnnotation(pointData.index, pointData.point, text.trim());
+    // Show modal
+    modal.classList.add('active');
+    input.value = '';
+
+    // Focus with delay for mobile compatibility
+    setTimeout(() => {
+        input.focus();
+    }, 100);
+
+    // Handle confirm
+    const handleConfirm = () => {
+        const text = input.value.trim();
+        if (text) {
+            addAnnotation(pointData.index, pointData.point, text);
+            toggleAnnotationMode(); // Exit annotation mode after adding
+            switchToTab('notes'); // Switch to notes tab to see the annotation
+        }
+        cleanup();
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
         toggleAnnotationMode(); // Exit annotation mode
-    }
+        cleanup();
+    };
+
+    // Cleanup function
+    const cleanup = () => {
+        modal.classList.remove('active');
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        modal.removeEventListener('click', handleOverlayClick);
+        input.removeEventListener('keydown', handleKeydown);
+    };
+
+    // Handle overlay click (close on backdrop click)
+    const handleOverlayClick = (e) => {
+        if (e.target === modal) {
+            handleCancel();
+        }
+    };
+
+    // Handle keyboard shortcuts
+    const handleKeydown = (e) => {
+        if (e.key === 'Enter') {
+            handleConfirm();
+        } else if (e.key === 'Escape') {
+            handleCancel();
+        }
+    };
+
+    // Add event listeners
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    input.addEventListener('keydown', handleKeydown);
+
+    // Add overlay click handler with a delay to prevent immediate closure
+    // This prevents the click that opened the modal from closing it
+    setTimeout(() => {
+        modal.addEventListener('click', handleOverlayClick);
+    }, 200);
 }
 
 /**
