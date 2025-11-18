@@ -21,6 +21,9 @@ npx serve frontend
 open frontend/index.html
 ```
 
+Forward Dev Port on windows to access WSL2 from e.g. your phone:
+`netsh interface portproxy add v4tov4 listenport=8000 listenaddress=0.0.0.0 connectport=8000 connectaddress=172.31.82.34`
+
 ### Backend (Python Analysis Tool)
 
 See [backend/README.md](backend/README.md) for detailed setup instructions.

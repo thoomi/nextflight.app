@@ -31,6 +31,8 @@
           <div class="text-2xl font-semibold text-white tracking-tight">NextFlight</div>
         </div>
       </div>
+
+      <!-- Desktop Nav -->
       <nav class="hidden md:flex items-center gap-6 text-sm text-slate-200" aria-label="Primary">
         <a href="/index.html" class="hover:text-white transition-colors">Home</a>
         <a href="#experience" class="hover:text-white transition-colors">Experience</a>
@@ -39,7 +41,26 @@
         <a href="#instructors" class="hover:text-white transition-colors">Instructors</a>
         <a href="#cta" class="px-4 py-2 rounded-2xl bg-orange-500 text-white shadow hover:shadow-lg">Talk to us</a>
       </nav>
+
+      <!-- Mobile Menu Button -->
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-200" aria-label="Toggle menu" aria-expanded="false">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
     </header>
+
+    <!-- Mobile Nav -->
+    <nav id="mobile-menu" class="md:hidden hidden mx-auto max-w-6xl px-4 sm:px-6" aria-label="Mobile navigation">
+      <div class="py-3 flex flex-col gap-3 text-sm text-slate-200 border-t border-white/10">
+        <a href="/index.html" class="py-2 hover:text-white transition-colors">Home</a>
+        <a href="#experience" class="py-2 hover:text-white transition-colors">Experience</a>
+        <a href="#difference" class="py-2 hover:text-white transition-colors">Why different</a>
+        <a href="#questions" class="py-2 hover:text-white transition-colors">Questions we answer</a>
+        <a href="#instructors" class="py-2 hover:text-white transition-colors">Instructors</a>
+        <a href="#cta" class="py-2 px-4 text-center rounded-2xl bg-orange-500 text-white shadow">Talk to us</a>
+      </div>
+    </nav>
 
     <main id="main" class="mx-auto max-w-6xl px-4 sm:px-6 pb-20 space-y-20">
       <!-- Hero -->
@@ -241,5 +262,7 @@
         </div>
       </section>
     </main>
+
+    <script src="/script.js"></script>
   </body>
 </html>
