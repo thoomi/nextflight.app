@@ -364,7 +364,7 @@ class CesiumRenderer {
      */
     async renderFlightTrack(flightData) {
         this.currentFlight = flightData;
-        const { points, vario, segments } = flightData;
+        const { points, vario, segments, glides } = flightData;
 
         if (!points || points.length === 0) {
             console.error('No points to render');
@@ -413,6 +413,18 @@ class CesiumRenderer {
                 }
             });
 
+            // Map to track which glide each segment belongs to (scaled for interpolated points)
+            const segmentToGlide = new Array(smoothPoints.length).fill(-1);
+            if (glides && glides.length > 0) {
+                glides.forEach((glide, idx) => {
+                    const startInterp = glide.startIdx * factor;
+                    const endInterp = Math.min(glide.endIdx * factor + factor, smoothPoints.length - 1);
+                    for (let i = startInterp; i <= endInterp; i++) {
+                        segmentToGlide[i] = idx;
+                    }
+                });
+            }
+
             // Use interpolated data for rendering
             const renderPoints = smoothPoints;
             const renderHeights = smoothHeights;
@@ -422,6 +434,7 @@ class CesiumRenderer {
             let currentPositions = [];
             let currentColor = null;
             let currentThermalIdx = null;
+            let currentGlideIdx = null;
             let startIdx = 0;
             let endIdx = 0;
 
@@ -438,10 +451,12 @@ class CesiumRenderer {
                     });
 
                     entity.thermalIndex = currentThermalIdx;
+                    entity.glideIndex = currentGlideIdx;
                     entity.isTrackSegment = true;
                     entity.originalColor = currentColor;
                     entity.originalWidth = 3;
-                    entity.startIdx = startIdx;
+                    entity.startIdx = startIdx;  // Interpolated index
+                    entity.endIdx = endIdx;      // Interpolated index
                     // Map interpolated index back to original point index for replay
                     entity.endPointIndex = Math.floor(endIdx / factor);
 
@@ -454,12 +469,14 @@ class CesiumRenderer {
                 const v = renderVario[i];
                 const color = this.getColorFromVario(v);
                 const thermalIdx = segmentToThermal[i];
+                const glideIdx = segmentToGlide[i];
 
                 // Check if we need to start a new segment (color or thermal changed)
                 if (currentColor === null) {
                     // First point
                     currentColor = color;
                     currentThermalIdx = thermalIdx;
+                    currentGlideIdx = glideIdx;
                     startIdx = i;
                     endIdx = i;
                     currentPositions = [Cesium.Cartesian3.fromDegrees(p.lon, p.lat, renderHeights[i])];
@@ -472,6 +489,7 @@ class CesiumRenderer {
                     // Start new segment (include this point as start)
                     currentColor = color;
                     currentThermalIdx = thermalIdx;
+                    currentGlideIdx = glideIdx;
                     startIdx = i;
                     endIdx = i;
                     currentPositions = [Cesium.Cartesian3.fromDegrees(p.lon, p.lat, renderHeights[i])];
@@ -489,6 +507,24 @@ class CesiumRenderer {
 
             // Store simple offset heights as fallback
             this.currentFlight.calculatedHeights = points.map(p => p.altM + HEIGHT_OFFSET);
+
+            // Map to track which thermal each segment belongs to
+            const segmentToThermal = new Array(points.length).fill(-1);
+            segments.forEach((thermal, idx) => {
+                for (let i = thermal.startIdx; i <= thermal.endIdx; i++) {
+                    segmentToThermal[i] = idx;
+                }
+            });
+
+            // Map to track which glide each segment belongs to
+            const segmentToGlide = new Array(points.length).fill(-1);
+            if (glides && glides.length > 0) {
+                glides.forEach((glide, idx) => {
+                    for (let i = glide.startIdx; i <= glide.endIdx; i++) {
+                        segmentToGlide[i] = idx;
+                    }
+                });
+            }
 
             // Fallback: use simple offset if terrain sampling fails
             for (let i = 0; i < points.length - 1; i++) {
@@ -512,6 +548,15 @@ class CesiumRenderer {
                         arcType: Cesium.ArcType.NONE
                     }
                 });
+
+                entity.thermalIndex = segmentToThermal[i];
+                entity.glideIndex = segmentToGlide[i];
+                entity.isTrackSegment = true;
+                entity.originalColor = color;
+                entity.originalWidth = 3;
+                entity.startIdx = i;      // No interpolation in fallback
+                entity.endIdx = i + 1;    // No interpolation in fallback
+                entity.endPointIndex = i;
 
                 this.flightEntities.push(entity);
             }
@@ -552,6 +597,27 @@ class CesiumRenderer {
             }
         });
     }
+
+    /**
+     * Highlight track segments belonging to a specific glide
+     * @param {number} glideIndex - Index of glide to highlight
+     */
+    highlightGlide(glideIndex) {
+        this.flightEntities.forEach(entity => {
+            if (entity.isTrackSegment) {
+                if (entity.glideIndex === glideIndex) {
+                    // Keep glide section normal - slightly thicker to stand out
+                    entity.polyline.width = 5;
+                    entity.polyline.material = entity.originalColor;
+                } else {
+                    // Gray out non-glide sections
+                    entity.polyline.width = 2;
+                    entity.polyline.material = Cesium.Color.GRAY.withAlpha(0.4);
+                }
+            }
+        });
+    }
+
 
     /**
      * Fly camera to view the flight track

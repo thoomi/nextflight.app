@@ -24,14 +24,32 @@ const DOM_IDS = {
     coachingContent: 'coachingContent',
     coachingTabContent: 'coachingTabContent',
 
-    // Metrics
+    // Metrics - Flight Overview
     metricDuration: 'metricDuration',
     metricMaxAlt: 'metricMaxAlt',
     metricThermals: 'metricThermals',
     metricFirstLift: 'metricFirstLift',
 
+    // Metrics - Best Thermal
+    metricBestClimb: 'metricBestClimb',
+    metricBestAvgClimb: 'metricBestAvgClimb',
+
+    // Metrics - Glide Analysis
+    metricGlides: 'metricGlides',
+    metricAvgGlideRatio: 'metricAvgGlideRatio',
+    metricTotalGlideDist: 'metricTotalGlideDist',
+
+    // Metrics - Wind
+    metricWindSpeed: 'metricWindSpeed',
+    metricWindDir: 'metricWindDir',
+
+    // Metrics - Speedbar & Quality
+    metricSpeedbarOps: 'metricSpeedbarOps',
+    metricGpsGaps: 'metricGpsGaps',
+
     // Lists
     thermalsContainer: 'thermalsContainer',
+    glidesContainer: 'glidesContainer',
     annotationsList: 'annotationsList',
 
     // Chart

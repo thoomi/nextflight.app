@@ -235,11 +235,43 @@ function readFileContent(file) {
  * @param {Object} analysis - Flight analysis data
  */
 function updateMetricsPanel(analysis) {
+    // Flight Overview
     domCache.get(DOM_IDS.metricDuration).textContent = formatTime(analysis.durationTotal);
     domCache.get(DOM_IDS.metricMaxAlt).textContent = analysis.maxAlt ? formatAltitude(analysis.maxAlt) : '-';
     domCache.get(DOM_IDS.metricThermals).textContent = analysis.segments.length;
     domCache.get(DOM_IDS.metricFirstLift).textContent = analysis.timeToFirstThermal ? formatTime(analysis.timeToFirstThermal) : '-';
+
+    // Best Thermal
+    if (analysis.best) {
+        domCache.get(DOM_IDS.metricBestClimb).textContent = formatVario(analysis.best.maxClimb);
+        domCache.get(DOM_IDS.metricBestAvgClimb).textContent = formatVario(analysis.best.avgClimb);
+    } else {
+        domCache.get(DOM_IDS.metricBestClimb).textContent = '-';
+        domCache.get(DOM_IDS.metricBestAvgClimb).textContent = '-';
+    }
+
+    // Glide Analysis
+    domCache.get(DOM_IDS.metricGlides).textContent = analysis.glideCount || 0;
+    domCache.get(DOM_IDS.metricAvgGlideRatio).textContent = analysis.avgGlideRatio ? formatGlideRatio(analysis.avgGlideRatio) : '-';
+    domCache.get(DOM_IDS.metricTotalGlideDist).textContent = analysis.totalGlideDistance ? formatDistance(analysis.totalGlideDistance) : '-';
+
+    // Wind Conditions
+    if (analysis.wind && analysis.wind.confidence > 0.3) {
+        domCache.get(DOM_IDS.metricWindSpeed).textContent = `${Math.round(analysis.wind.speed)} km/h`;
+        domCache.get(DOM_IDS.metricWindDir).textContent = `${analysis.wind.directionCompass} (${Math.round(analysis.wind.confidence * 100)}%)`;
+    } else {
+        domCache.get(DOM_IDS.metricWindSpeed).textContent = '-';
+        domCache.get(DOM_IDS.metricWindDir).textContent = '-';
+    }
+
+    // Performance Insights
+    domCache.get(DOM_IDS.metricSpeedbarOps).textContent = analysis.speedbarOpportunityCount || 0;
+    const gpsGapsText = analysis.gpsGaps > 0 ? `${analysis.gpsGaps} ⚠️` : analysis.gpsGaps || 0;
+    domCache.get(DOM_IDS.metricGpsGaps).textContent = gpsGapsText;
+
+    // Update detail tabs
     updateThermalsList(analysis.segments);
+    updateGlidesList(analysis.glides || []);
 }
 
 /**
@@ -374,6 +406,185 @@ function flyToThermal(thermal) {
 }
 
 /**
+ * Update glides list
+ * @param {Array<GlideSegment>} glides - Array of glide segments
+ */
+function updateGlidesList(glides) {
+    const container = domCache.get(DOM_IDS.glidesContainer);
+    container.innerHTML = '';
+
+    if (glides.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-500">No glide segments detected</div>';
+        return;
+    }
+
+    // Add "Clear selection" option at the top
+    const clearItem = document.createElement('div');
+    clearItem.className = `${CSS_CLASSES.thermalItem} text-center`;
+    clearItem.id = 'clearGlideSelection';
+    clearItem.innerHTML = '<div class="text-xs text-slate-500 italic">No glide selected</div>';
+    clearItem.addEventListener('click', clearGlideSelection);
+    container.appendChild(clearItem);
+
+    glides.forEach((glide, index) => {
+        const item = document.createElement('div');
+        item.className = CSS_CLASSES.thermalItem;
+        item.dataset.glideIndex = index;
+
+        // Determine color and icon based on glide type
+        let typeColor, typeIcon, typeLabel, backgroundColor;
+
+        if (glide.speedbarOpportunity && glide.speedbarWorthwhile) {
+            typeColor = 'text-orange-600';
+            backgroundColor = 'bg-orange-50';
+            typeIcon = '⚡';
+            typeLabel = 'Speedbar';
+        } else if (glide.speedbarOpportunity) {
+            typeColor = 'text-yellow-600';
+            backgroundColor = 'bg-yellow-50';
+            typeIcon = '⚡';
+            typeLabel = 'Minor Speedbar';
+        } else if (glide.glideType === 'soaring') {
+            typeColor = 'text-green-600';
+            backgroundColor = 'bg-green-50';
+            typeIcon = '🪂';
+            typeLabel = 'Ridge Soaring';
+        } else if (glide.glideType === 'searching') {
+            typeColor = 'text-purple-600';
+            backgroundColor = 'bg-purple-50';
+            typeIcon = '🔍';
+            typeLabel = 'Searching';
+        } else if (glide.glideRatio && glide.glideRatio < 6) {
+            typeColor = 'text-red-600';
+            backgroundColor = 'bg-red-50';
+            typeIcon = '⚠️';
+            typeLabel = 'Poor Glide';
+        } else {
+            typeColor = 'text-slate-700';
+            backgroundColor = 'bg-slate-100';
+            typeIcon = '✈️';
+            typeLabel = 'Normal';
+        }
+
+        // Format speedbar reasons if present
+        let reasonsHtml = '';
+        if (glide.speedbarReasons && glide.speedbarReasons.length > 0) {
+            reasonsHtml = `<div class="text-xs text-slate-500 mt-1">${glide.speedbarReasons.join(', ')}</div>`;
+        }
+
+        item.className += ` ${backgroundColor}`;
+        item.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+                <div class="text-xs font-medium text-slate-900">Glide ${index + 1}</div>
+                <div class="text-xs ${typeColor}">
+                    ${typeIcon} ${typeLabel}
+                </div>
+            </div>
+            <div class="text-xs text-slate-600">
+                <div>
+                    ${glide.direction} • ${(glide.straightDistance / 1000).toFixed(2)} km
+                    ${glide.glideRatio ? ` • ${glide.glideRatio.toFixed(1)}:1` : ''}
+                </div>
+                <div class="text-slate-500">
+                    ${formatVario(glide.avgVario)} • ${formatTime(glide.durationS)}
+                </div>
+                ${reasonsHtml}
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => highlightGlideTrack(index));
+        item.addEventListener('mouseleave', () => {
+            appState.selectedGlideIndex !== null ? highlightGlideTrack(appState.selectedGlideIndex) : unhighlightGlideTrack();
+        });
+        item.addEventListener('click', () => {
+            selectGlide(index);
+            flyToGlide(glide);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+/**
+ * Select a glide and persist highlighting
+ * @param {number} index - Glide index
+ */
+function selectGlide(index) {
+    appState.selectedGlideIndex = index;
+    highlightGlideTrack(index);
+
+    // Update visual selection in list
+    document.querySelectorAll(`[data-glide-index]`).forEach(t => t.classList.remove(CSS_CLASSES.active));
+    const selectedItem = document.querySelector(`[data-glide-index="${index}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add(CSS_CLASSES.active);
+    }
+}
+
+/**
+ * Clear glide selection
+ */
+function clearGlideSelection() {
+    appState.selectedGlideIndex = null;
+    unhighlightGlideTrack();
+
+    // Remove visual selection
+    document.querySelectorAll(`[data-glide-index]`).forEach(t => t.classList.remove(CSS_CLASSES.active));
+
+    // Fly to current replay position
+    if (appState.hasFlightData()) {
+        const pointIndex = appState.replay.currentPointIndex || 0;
+        const point = appState.currentAnalysis.points[pointIndex];
+        const height = appState.currentAnalysis.calculatedHeights?.[pointIndex] || point.altM;
+
+        appState.renderer.flyToPosition(point.lon, point.lat, height);
+    }
+}
+
+/**
+ * Fly camera to glide
+ * @param {GlideSegment} glide - Glide segment
+ */
+function flyToGlide(glide) {
+    if (!appState.hasFlightData()) return;
+
+    const points = appState.currentAnalysis.points;
+
+    // If replay hasn't reached this glide yet, jump to the end of the glide
+    if (appState.replay.totalDuration > 0 && appState.replay.currentPointIndex < glide.endIdx) {
+        const glideEndTime = points[glide.endIdx].timeS - points[0].timeS;
+        seekReplay(glideEndTime);
+    }
+
+    // Calculate bounding box of glide
+    let minLat = Infinity, maxLat = -Infinity;
+    let minLon = Infinity, maxLon = -Infinity;
+    let minAlt = Infinity, maxAlt = -Infinity;
+
+    for (let i = glide.startIdx; i <= glide.endIdx; i++) {
+        const p = points[i];
+        minLat = Math.min(minLat, p.lat);
+        maxLat = Math.max(maxLat, p.lat);
+        minLon = Math.min(minLon, p.lon);
+        maxLon = Math.max(maxLon, p.lon);
+        minAlt = Math.min(minAlt, p.altM);
+        maxAlt = Math.max(maxAlt, p.altM);
+    }
+
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLon = (minLon + maxLon) / 2;
+    const centerAlt = (minAlt + maxAlt) / 2;
+    const horizontalSpan = Math.max(maxLat - minLat, maxLon - minLon);
+    const viewDistance = Math.max(APP_CONFIG.camera.defaultRange, horizontalSpan * 111000 * 3);
+
+    appState.renderer.flyToPosition(centerLon, centerLat, centerAlt, {
+        range: viewDistance,
+        duration: APP_CONFIG.camera.flyDuration
+    });
+}
+
+
+/**
  * Highlight thermal track on the 3D map
  * @param {number} index - Thermal index
  */
@@ -395,6 +606,33 @@ function unhighlightThermalTrack() {
 
     if (appState.replay.trailCollection && appState.replay.trailPolylines.length > 0) {
         updateTrailThermalHighlight(-1);
+    } else {
+        appState.renderer.unhighlightAll();
+    }
+}
+
+/**
+ * Highlight glide track on the 3D map
+ * @param {number} index - Glide index
+ */
+function highlightGlideTrack(index) {
+    if (!appState.renderer) return;
+
+    if (appState.replay.trailCollection && appState.replay.trailPolylines.length > 0) {
+        updateTrailGlideHighlight(index);
+    } else {
+        appState.renderer.highlightGlide(index);
+    }
+}
+
+/**
+ * Remove glide track highlighting
+ */
+function unhighlightGlideTrack() {
+    if (!appState.renderer) return;
+
+    if (appState.replay.trailCollection && appState.replay.trailPolylines.length > 0) {
+        updateTrailGlideHighlight(-1);
     } else {
         appState.renderer.unhighlightAll();
     }
@@ -442,6 +680,58 @@ function updateTrailThermalHighlight(thermalIndex) {
             polyline.width = 5;
         } else {
             // Not in highlighted thermal - show grayed out
+            polyline.material = Cesium.Material.fromType('Color', {
+                color: Cesium.Color.GRAY.withAlpha(0.4)
+            });
+            polyline.width = 2;
+        }
+    });
+}
+
+/**
+ * Update trail colors for glide highlighting during replay
+ * @param {number} glideIndex - Glide index to highlight (-1 for no highlight)
+ */
+function updateTrailGlideHighlight(glideIndex) {
+    if (!appState.replay.trailPolylines || !appState.hasFlightData()) return;
+
+    const glides = appState.currentAnalysis.glides;
+    if (!glides || glides.length === 0) return;
+
+    const interpVario = appState.replay.interpolatedVario;
+    const factor = appState.replay.interpolationFactor + 1;
+
+    // Map which interpolated indices belong to which glide
+    const interpToGlide = new Array(interpVario.length).fill(-1);
+    glides.forEach((glide, idx) => {
+        const startInterp = glide.startIdx * factor;
+        const endInterp = Math.min(glide.endIdx * factor + factor, interpVario.length - 1);
+        for (let i = startInterp; i <= endInterp; i++) {
+            interpToGlide[i] = idx;
+        }
+    });
+
+    // Update each polyline's color based on whether it's in the highlighted glide
+    appState.replay.colorSegments.forEach((seg, idx) => {
+        const polyline = appState.replay.trailPolylines[idx];
+
+        // Check if this segment belongs to the highlighted glide
+        const segGlideIdx = interpToGlide[seg.startIdx];
+
+        if (glideIndex === -1) {
+            // No highlight - restore original color and width
+            polyline.material = Cesium.Material.fromType('Color', {
+                color: seg.color
+            });
+            polyline.width = 3;
+        } else if (segGlideIdx === glideIndex) {
+            // This segment is in the highlighted glide - show bright
+            polyline.material = Cesium.Material.fromType('Color', {
+                color: seg.color
+            });
+            polyline.width = 5;
+        } else {
+            // Not in highlighted glide - show grayed out
             polyline.material = Cesium.Material.fromType('Color', {
                 color: Cesium.Color.GRAY.withAlpha(0.4)
             });
@@ -1299,6 +1589,13 @@ function setupReplayControls() {
     domCache.get(DOM_IDS.replaySpeed).addEventListener('change', (e) => {
         appState.replay.speed = parseFloat(e.target.value);
     });
+
+    // Glide visualization toggle button - disabled, use Glides tab instead
+    const toggleGlidesBtn = document.getElementById('toggleGlidesBtn');
+    if (toggleGlidesBtn) {
+        // Hide the button since glides are now controlled via the Glides tab
+        toggleGlidesBtn.style.display = 'none';
+    }
 
     const timeline = domCache.get(DOM_IDS.replayTimeline);
     let isDragging = false;

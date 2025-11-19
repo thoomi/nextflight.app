@@ -48,6 +48,42 @@ function formatVario(vario, decimals = 1) {
 }
 
 /**
+ * Format distance in meters to km or m
+ * @param {number|null|undefined} meters - Distance in meters
+ * @returns {string} - Formatted distance string
+ */
+function formatDistance(meters) {
+    if (meters === null || meters === undefined) return '-';
+    if (meters >= 1000) {
+        return `${(meters / 1000).toFixed(1)} km`;
+    }
+    return `${Math.round(meters)} m`;
+}
+
+/**
+ * Format glide ratio
+ * @param {number|null|undefined} ratio - Glide ratio
+ * @returns {string} - Formatted glide ratio string
+ */
+function formatGlideRatio(ratio) {
+    if (ratio === null || ratio === undefined) return '-';
+    return `${ratio.toFixed(1)}:1`;
+}
+
+/**
+ * Format wind speed and direction
+ * @param {number} speed - Wind speed in km/h
+ * @param {string} direction - Compass direction (e.g., "NW")
+ * @param {number} [confidence] - Confidence level (0-1)
+ * @returns {string} - Formatted wind string
+ */
+function formatWind(speed, direction, confidence) {
+    if (!speed || !direction) return '-';
+    const conf = confidence !== undefined ? ` (${Math.round(confidence * 100)}%)` : '';
+    return `${Math.round(speed)} km/h ${direction}${conf}`;
+}
+
+/**
  * Clamp a number between min and max values
  * @param {number} value - Value to clamp
  * @param {number} min - Minimum allowed value
@@ -258,6 +294,9 @@ if (typeof module !== 'undefined' && module.exports) {
         formatReplayTime,
         formatAltitude,
         formatVario,
+        formatDistance,
+        formatGlideRatio,
+        formatWind,
         clamp,
         truncateText,
         debounce,
