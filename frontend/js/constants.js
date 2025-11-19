@@ -47,6 +47,45 @@ const DOM_IDS = {
     metricSpeedbarOps: 'metricSpeedbarOps',
     metricGpsGaps: 'metricGpsGaps',
 
+    // Metrics - Thermal Performance
+    metricTotalThermalTime: 'metricTotalThermalTime',
+    metricAvgThermalDuration: 'metricAvgThermalDuration',
+    metricAltGained: 'metricAltGained',
+    metricCenteringQuality: 'metricCenteringQuality',
+    metricThermalDirection: 'metricThermalDirection',
+    metricAvgTurnRate: 'metricAvgTurnRate',
+
+    // Metrics - Track & Speed
+    metricTotalDistance: 'metricTotalDistance',
+    metricStraightDistance: 'metricStraightDistance',
+    metricTrackEfficiency: 'metricTrackEfficiency',
+    metricAvgSpeed: 'metricAvgSpeed',
+    metricMaxSpeed: 'metricMaxSpeed',
+
+    // Metrics - Altitude Stats
+    metricMinAlt: 'metricMinAlt',
+    metricAvgAlt: 'metricAvgAlt',
+    metricAltRange: 'metricAltRange',
+    metricLowAltWarnings: 'metricLowAltWarnings',
+
+    // Metrics - Flight Phases
+    metricTimeClimbing: 'metricTimeClimbing',
+    metricTimeGliding: 'metricTimeGliding',
+    metricTimeSearching: 'metricTimeSearching',
+    metricAltClimbing: 'metricAltClimbing',
+    metricAltGliding: 'metricAltGliding',
+    metricAltSearching: 'metricAltSearching',
+
+    // Metrics - Personal Bests
+    metricBestGlideRatio: 'metricBestGlideRatio',
+    metricLongestThermal: 'metricLongestThermal',
+    metricLongestGlide: 'metricLongestGlide',
+
+    // Metrics - Speedbar Details
+    metricSpeedbarTimeSavings: 'metricSpeedbarTimeSavings',
+    metricSpeedbarAltCost: 'metricSpeedbarAltCost',
+    metricSpeedbarWorthwhile: 'metricSpeedbarWorthwhile',
+
     // Lists
     thermalsContainer: 'thermalsContainer',
     glidesContainer: 'glidesContainer',

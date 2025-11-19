@@ -241,19 +241,79 @@ function updateMetricsPanel(analysis) {
     domCache.get(DOM_IDS.metricThermals).textContent = analysis.segments.length;
     domCache.get(DOM_IDS.metricFirstLift).textContent = analysis.timeToFirstThermal ? formatTime(analysis.timeToFirstThermal) : '-';
 
-    // Best Thermal
+    // Thermal Performance
+    domCache.get(DOM_IDS.metricTotalThermalTime).textContent = formatTime(analysis.totalThermalTime);
+    domCache.get(DOM_IDS.metricAvgThermalDuration).textContent = formatTime(analysis.avgThermalDuration);
+    domCache.get(DOM_IDS.metricAltGained).textContent = formatAltitude(analysis.totalAltitudeGained);
+
     if (analysis.best) {
         domCache.get(DOM_IDS.metricBestClimb).textContent = formatVario(analysis.best.maxClimb);
         domCache.get(DOM_IDS.metricBestAvgClimb).textContent = formatVario(analysis.best.avgClimb);
+        // Centering quality based on standard deviation
+        const quality = analysis.best.centeringStd < 0.4 ? 'Excellent' :
+                       analysis.best.centeringStd < 0.6 ? 'Good' :
+                       analysis.best.centeringStd < 0.8 ? 'Fair' : 'Needs Work';
+        domCache.get(DOM_IDS.metricCenteringQuality).textContent = quality;
     } else {
         domCache.get(DOM_IDS.metricBestClimb).textContent = '-';
         domCache.get(DOM_IDS.metricBestAvgClimb).textContent = '-';
+        domCache.get(DOM_IDS.metricCenteringQuality).textContent = '-';
     }
+
+    // Thermaling Technique
+    if (analysis.thermalDirectionPreference) {
+        const pref = analysis.thermalDirectionPreference;
+        const prefText = `${Math.round(pref.right)}% R / ${Math.round(pref.left)}% L`;
+        domCache.get(DOM_IDS.metricThermalDirection).textContent = prefText;
+    } else {
+        domCache.get(DOM_IDS.metricThermalDirection).textContent = '-';
+    }
+    domCache.get(DOM_IDS.metricAvgTurnRate).textContent = formatTurnRate(analysis.avgThermalTurnRate);
 
     // Glide Analysis
     domCache.get(DOM_IDS.metricGlides).textContent = analysis.glideCount || 0;
     domCache.get(DOM_IDS.metricAvgGlideRatio).textContent = analysis.avgGlideRatio ? formatGlideRatio(analysis.avgGlideRatio) : '-';
+    domCache.get(DOM_IDS.metricBestGlideRatio).textContent = analysis.bestGlideRatio ? formatGlideRatio(analysis.bestGlideRatio) : '-';
     domCache.get(DOM_IDS.metricTotalGlideDist).textContent = analysis.totalGlideDistance ? formatDistance(analysis.totalGlideDistance) : '-';
+
+    // Track & Speed
+    domCache.get(DOM_IDS.metricTotalDistance).textContent = formatDistance(analysis.totalTrackDistance);
+    domCache.get(DOM_IDS.metricStraightDistance).textContent = formatDistance(analysis.straightLineDistance);
+    domCache.get(DOM_IDS.metricTrackEfficiency).textContent = formatPercentage(analysis.trackEfficiency, 0);
+    domCache.get(DOM_IDS.metricAvgSpeed).textContent = formatSpeed(analysis.avgGroundSpeed);
+    domCache.get(DOM_IDS.metricMaxSpeed).textContent = formatSpeed(analysis.maxGroundSpeed);
+
+    // Altitude Stats
+    domCache.get(DOM_IDS.metricMinAlt).textContent = formatAltitude(analysis.minAlt);
+    domCache.get(DOM_IDS.metricAvgAlt).textContent = formatAltitude(analysis.avgAlt);
+    domCache.get(DOM_IDS.metricAltRange).textContent = formatAltitude(analysis.altitudeRange);
+    const lowAltText = analysis.lowAltitudeWarnings > 0 ? `${analysis.lowAltitudeWarnings} ⚠️` : '0';
+    domCache.get(DOM_IDS.metricLowAltWarnings).textContent = lowAltText;
+
+    // Flight Phases Breakdown
+    const totalTime = analysis.durationTotal;
+    const climbPct = totalTime > 0 ? ` (${Math.round((analysis.timeClimbing / totalTime) * 100)}%)` : '';
+    const glidePct = totalTime > 0 ? ` (${Math.round((analysis.timeGliding / totalTime) * 100)}%)` : '';
+    const searchPct = totalTime > 0 ? ` (${Math.round((analysis.timeSearching / totalTime) * 100)}%)` : '';
+
+    domCache.get(DOM_IDS.metricTimeClimbing).textContent = formatTime(analysis.timeClimbing) + climbPct;
+    domCache.get(DOM_IDS.metricTimeGliding).textContent = formatTime(analysis.timeGliding) + glidePct;
+    domCache.get(DOM_IDS.metricTimeSearching).textContent = formatTime(analysis.timeSearching) + searchPct;
+    domCache.get(DOM_IDS.metricAltClimbing).textContent = '+' + formatAltitude(analysis.altGainedClimbing);
+    domCache.get(DOM_IDS.metricAltGliding).textContent = '-' + formatAltitude(analysis.altLostGliding);
+    domCache.get(DOM_IDS.metricAltSearching).textContent = '-' + formatAltitude(analysis.altLostSearching);
+
+    // Personal Bests
+    if (analysis.longestThermal) {
+        domCache.get(DOM_IDS.metricLongestThermal).textContent = formatTime(analysis.longestThermal.durationS);
+    } else {
+        domCache.get(DOM_IDS.metricLongestThermal).textContent = '-';
+    }
+    if (analysis.longestGlide) {
+        domCache.get(DOM_IDS.metricLongestGlide).textContent = formatDistance(analysis.longestGlide.straightDistance);
+    } else {
+        domCache.get(DOM_IDS.metricLongestGlide).textContent = '-';
+    }
 
     // Wind Conditions
     if (analysis.wind && analysis.wind.confidence > 0.3) {
@@ -264,9 +324,14 @@ function updateMetricsPanel(analysis) {
         domCache.get(DOM_IDS.metricWindDir).textContent = '-';
     }
 
-    // Performance Insights
+    // Speedbar Analysis
     domCache.get(DOM_IDS.metricSpeedbarOps).textContent = analysis.speedbarOpportunityCount || 0;
-    const gpsGapsText = analysis.gpsGaps > 0 ? `${analysis.gpsGaps} ⚠️` : analysis.gpsGaps || 0;
+    domCache.get(DOM_IDS.metricSpeedbarWorthwhile).textContent = analysis.worthwhileSpeedbarCount || 0;
+    domCache.get(DOM_IDS.metricSpeedbarTimeSavings).textContent = formatTime(analysis.totalTimeSavings || 0);
+    domCache.get(DOM_IDS.metricSpeedbarAltCost).textContent = formatAltitude(analysis.totalAltCost || 0);
+
+    // Data Quality
+    const gpsGapsText = analysis.gpsGaps > 0 ? `${analysis.gpsGaps} ⚠️` : '0';
     domCache.get(DOM_IDS.metricGpsGaps).textContent = gpsGapsText;
 
     // Update detail tabs
@@ -1084,7 +1149,21 @@ function showTrackInfoPopup(lon, lat, point, vario, height) {
     }
 
     const labelText = `${formatVario(vario)} | ${formatAltitude(height)} | ${formatTime(point.timeS)}`;
-    const entity = appState.renderer.createInfoLabel(lon, lat, height, labelText);
+    const infoBadge = makeInfoBadge(labelText);
+
+    // Create entity with custom canvas badge (no visible point marker)
+    const entity = appState.renderer.createPointMarker(
+        lon,
+        lat,
+        height + 20, // Small altitude offset in world space (20m above track)
+        {
+            name: 'Track Info',
+            pixelSize: 0, // Hide the point marker, only show the billboard
+            billboard: infoBadge,
+            pixelOffset: new Cesium.Cartesian2(0, 0) // No screen-space offset to keep it at exact track position
+        }
+    );
+
     appState.setInfoPopupEntity(entity);
 
     // Auto-hide popup
@@ -1392,6 +1471,39 @@ function makeAnnotationBadge(text, color) {
   ctx.roundRect(0, 0, canvas.width, canvas.height, radius); // supported in modern browsers
   ctx.fill();
 
+  ctx.font = font;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  return canvas;
+}
+
+/**
+ * Create info badge (similar to annotations but with different styling)
+ * @param {string} text - Badge text
+ * @returns {HTMLCanvasElement} - Canvas element with badge
+ */
+function makeInfoBadge(text) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
+  const padX = 12, padY = 8, radius = 4;
+
+  ctx.font = font;
+  const w = Math.ceil(ctx.measureText(text).width);
+  const h = 16; // font size
+  canvas.width = w + padX * 2;
+  canvas.height = h + padY * 2;
+
+  // Draw background - use slate-900 like the original label
+  ctx.fillStyle = APP_CONFIG.colors.slate[900];
+  ctx.beginPath();
+  ctx.roundRect(0, 0, canvas.width, canvas.height, radius);
+  ctx.fill();
+
+  // Draw text
   ctx.font = font;
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'center';

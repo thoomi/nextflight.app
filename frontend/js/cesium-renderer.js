@@ -393,8 +393,12 @@ class CesiumRenderer {
                 return Math.max(p.altM, terrainHeight + HEIGHT_OFFSET);
             });
 
+            // Store terrain heights for altitude chart ground elevation display
+            const terrainHeights = sampledPositions.map(p => p.height || 0);
+
             // Store heights in currentFlight for markers to use
             this.currentFlight.calculatedHeights = calculatedHeights;
+            this.currentFlight.terrainHeights = terrainHeights;
 
             // Apply spline interpolation for smooth curves
             const interpolated = this.interpolateTrack(points, calculatedHeights, vario, this.interpolationFactor);
@@ -507,6 +511,8 @@ class CesiumRenderer {
 
             // Store simple offset heights as fallback
             this.currentFlight.calculatedHeights = points.map(p => p.altM + HEIGHT_OFFSET);
+            // Set terrain heights to 0 as fallback (no terrain data available)
+            this.currentFlight.terrainHeights = points.map(() => 0);
 
             // Map to track which thermal each segment belongs to
             const segmentToThermal = new Array(points.length).fill(-1);
@@ -784,7 +790,8 @@ class CesiumRenderer {
             pixelSize = APP_CONFIG.markers.annotationPointSize,
             color = APP_CONFIG.colors.primaryLight,
             outlineWidth = APP_CONFIG.markers.annotationOutlineWidth,
-            billboard = null
+            billboard = null,
+            pixelOffset = null
         } = options;
 
         const entityOptions = {
@@ -805,7 +812,7 @@ class CesiumRenderer {
                 image: billboard,
                 horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
                 verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                pixelOffset: new Cesium.Cartesian2(0, -20),
+                pixelOffset: pixelOffset || new Cesium.Cartesian2(0, -20),
                 disableDepthTestDistance: Number.POSITIVE_INFINITY,
                 scaleByDistance: new Cesium.NearFarScalar(100, 1.0, 3000, 0.5)
             };

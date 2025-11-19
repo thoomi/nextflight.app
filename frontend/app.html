@@ -140,7 +140,7 @@
       }
 
       .bottom-bar-content {
-        height: 120px;
+        height: 150px;
       }
 
       .resize-handle {
@@ -580,6 +580,103 @@
         gap: 8px;
       }
 
+      /* Metrics Cards Grid */
+      .metrics-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        padding: 8px;
+      }
+
+      /* Individual Metric Card */
+      .metric-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+        border-color: #f97316;
+      }
+
+      /* Card Header with Icon and Title */
+      .metric-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .metric-card-icon {
+        width: 20px;
+        height: 20px;
+        color: #f97316;
+        flex-shrink: 0;
+      }
+
+      .metric-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #334155;
+        letter-spacing: 0.5px;
+      }
+
+      /* Hero Metric (Large Display) */
+      .metric-card-hero {
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      .metric-hero-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #f97316;
+        line-height: 1.2;
+        margin-bottom: 4px;
+      }
+
+      .metric-hero-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+      }
+
+      /* Secondary Stats Grid */
+      .metric-card-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .metric-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .metric-stat-label {
+        font-size: 10px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-weight: 500;
+      }
+
+      .metric-stat-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
       /* Coaching grid */
       #coachingTabContent {
         display: grid;
@@ -908,81 +1005,303 @@
 
           <!-- Info Tab -->
           <div id="tabInfo" class="tab-content">
-            <!-- Flight Overview -->
-            <div class="text-xs font-semibold text-slate-400 mb-2 mt-1">FLIGHT OVERVIEW</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Duration</div>
-                <div id="metricDuration" class="info-value">--</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Max Altitude</div>
-                <div id="metricMaxAlt" class="info-value">--</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Thermals</div>
-                <div id="metricThermals" class="info-value">--</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">First Lift</div>
-                <div id="metricFirstLift" class="info-value">--</div>
-              </div>
-            </div>
+            <!-- Cards Grid -->
+            <div class="metrics-cards-grid">
 
-            <!-- Best Thermal -->
-            <div class="text-xs font-semibold text-slate-400 mb-2 mt-4">BEST THERMAL</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Peak Climb</div>
-                <div id="metricBestClimb" class="info-value">--</div>
+              <!-- Flight Overview Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="metric-card-title">Flight Overview</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricDuration">--</div>
+                  <div class="metric-hero-label">Duration</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Max Alt</span>
+                    <span class="metric-stat-value" id="metricMaxAlt">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Thermals</span>
+                    <span class="metric-stat-value" id="metricThermals">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">First Lift</span>
+                    <span class="metric-stat-value" id="metricFirstLift">--</span>
+                  </div>
+                </div>
               </div>
-              <div class="info-item">
-                <div class="info-label">Avg Climb</div>
-                <div id="metricBestAvgClimb" class="info-value">--</div>
-              </div>
-            </div>
 
-            <!-- Glide Analysis -->
-            <div class="text-xs font-semibold text-slate-400 mb-2 mt-4">GLIDE ANALYSIS</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Glide Segments</div>
-                <div id="metricGlides" class="info-value">--</div>
+              <!-- Thermal Performance Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  <span class="metric-card-title">Thermal Performance</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricBestClimb">--</div>
+                  <div class="metric-hero-label">Peak Climb Rate</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Avg Climb</span>
+                    <span class="metric-stat-value" id="metricBestAvgClimb">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Alt Gained</span>
+                    <span class="metric-stat-value" id="metricAltGained">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Total Time</span>
+                    <span class="metric-stat-value" id="metricTotalThermalTime">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Avg Duration</span>
+                    <span class="metric-stat-value" id="metricAvgThermalDuration">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Centering</span>
+                    <span class="metric-stat-value" id="metricCenteringQuality">--</span>
+                  </div>
+                </div>
               </div>
-              <div class="info-item">
-                <div class="info-label">Avg Glide Ratio</div>
-                <div id="metricAvgGlideRatio" class="info-value">--</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Total Distance</div>
-                <div id="metricTotalGlideDist" class="info-value">--</div>
-              </div>
-            </div>
 
-            <!-- Wind Conditions -->
-            <div class="text-xs font-semibold text-slate-400 mb-2 mt-4">WIND CONDITIONS</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Wind Speed</div>
-                <div id="metricWindSpeed" class="info-value">--</div>
+              <!-- Glide Performance Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-9 5 9M5 21h14"/>
+                  </svg>
+                  <span class="metric-card-title">Glide Performance</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricBestGlideRatio">--</div>
+                  <div class="metric-hero-label">Best Glide Ratio</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Avg Ratio</span>
+                    <span class="metric-stat-value" id="metricAvgGlideRatio">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Glides</span>
+                    <span class="metric-stat-value" id="metricGlides">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Total Dist</span>
+                    <span class="metric-stat-value" id="metricTotalGlideDist">--</span>
+                  </div>
+                </div>
               </div>
-              <div class="info-item">
-                <div class="info-label">Wind From</div>
-                <div id="metricWindDir" class="info-value">--</div>
-              </div>
-            </div>
 
-            <!-- Performance Insights -->
-            <div class="text-xs font-semibold text-slate-400 mb-2 mt-4">PERFORMANCE INSIGHTS</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Speedbar Opportunities</div>
-                <div id="metricSpeedbarOps" class="info-value">--</div>
+              <!-- Track & Speed Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                  </svg>
+                  <span class="metric-card-title">Track & Speed</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricMaxSpeed">--</div>
+                  <div class="metric-hero-label">Max Speed</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Avg Speed</span>
+                    <span class="metric-stat-value" id="metricAvgSpeed">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Track Dist</span>
+                    <span class="metric-stat-value" id="metricTotalDistance">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Straight</span>
+                    <span class="metric-stat-value" id="metricStraightDistance">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Efficiency</span>
+                    <span class="metric-stat-value" id="metricTrackEfficiency">--</span>
+                  </div>
+                </div>
               </div>
-              <div class="info-item">
-                <div class="info-label">GPS Signal Gaps</div>
-                <div id="metricGpsGaps" class="info-value">--</div>
+
+              <!-- Flight Phases Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                  </svg>
+                  <span class="metric-card-title">Flight Breakdown</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricTimeClimbing">--</div>
+                  <div class="metric-hero-label">Climbing Time</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Gliding</span>
+                    <span class="metric-stat-value" id="metricTimeGliding">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Searching</span>
+                    <span class="metric-stat-value" id="metricTimeSearching">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Alt Gained</span>
+                    <span class="metric-stat-value" id="metricAltClimbing">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Alt Lost (Glide)</span>
+                    <span class="metric-stat-value" id="metricAltGliding">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Alt Lost (Search)</span>
+                    <span class="metric-stat-value" id="metricAltSearching">--</span>
+                  </div>
+                </div>
               </div>
+
+              <!-- Altitude Stats Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                  </svg>
+                  <span class="metric-card-title">Altitude Stats</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricAvgAlt">--</div>
+                  <div class="metric-hero-label">Average Altitude</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Min Alt</span>
+                    <span class="metric-stat-value" id="metricMinAlt">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Range</span>
+                    <span class="metric-stat-value" id="metricAltRange">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Low Alt Events</span>
+                    <span class="metric-stat-value" id="metricLowAltWarnings">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Technique Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  <span class="metric-card-title">Technique</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricThermalDirection">--</div>
+                  <div class="metric-hero-label">Turn Preference</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Avg Turn Rate</span>
+                    <span class="metric-stat-value" id="metricAvgTurnRate">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Wind & Conditions Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                  </svg>
+                  <span class="metric-card-title">Wind Conditions</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricWindSpeed">--</div>
+                  <div class="metric-hero-label">Wind Speed</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Wind From</span>
+                    <span class="metric-stat-value" id="metricWindDir">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Personal Bests Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                  </svg>
+                  <span class="metric-card-title">Personal Bests</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricLongestThermal">--</div>
+                  <div class="metric-hero-label">Longest Thermal</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Longest Glide</span>
+                    <span class="metric-stat-value" id="metricLongestGlide">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">First Lift</span>
+                    <span class="metric-stat-value" id="metricFirstLift">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Speedbar Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  <span class="metric-card-title">Speedbar Analysis</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricSpeedbarOps">--</div>
+                  <div class="metric-hero-label">Opportunities</div>
+                </div>
+                <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Worth It</span>
+                    <span class="metric-stat-value" id="metricSpeedbarWorthwhile">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Time Saved</span>
+                    <span class="metric-stat-value" id="metricSpeedbarTimeSavings">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Alt Cost</span>
+                    <span class="metric-stat-value" id="metricSpeedbarAltCost">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Quality Card -->
+              <div class="metric-card">
+                <div class="metric-card-header">
+                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="metric-card-title">Data Quality</span>
+                </div>
+                <div class="metric-card-hero">
+                  <div class="metric-hero-value" id="metricGpsGaps">--</div>
+                  <div class="metric-hero-label">GPS Signal Gaps</div>
+                </div>
+              </div>
+
             </div>
           </div>
 

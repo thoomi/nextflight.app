@@ -18,6 +18,7 @@ const CONFIG = {
     // Smoothing
     VARIO_SMOOTH_WINDOW: 5,  // points for vario smoothing
     TURN_SMOOTH_WINDOW: 5,  // points for turn rate smoothing
+    SPEED_SMOOTH_WINDOW: 5,  // points for speed smoothing (reduces GPS noise)
 
     // Early Exit Detection
     STRONG_CLIMB_THRESHOLD: 1.2,  // m/s - peak climb considered "strong"
@@ -878,12 +879,13 @@ function analyze(points) {
     // Smooth signals
     const varioS = movingAvg(vario, CONFIG.VARIO_SMOOTH_WINDOW);
     const turnS = movingAvg(turnRate, CONFIG.TURN_SMOOTH_WINDOW);
+    const speedS = movingAvg(speed, CONFIG.SPEED_SMOOTH_WINDOW);
 
     // Detect thermals
     const segments = detectThermals(points, dt, varioS, turnS, heading);
 
     // Detect glide segments
-    const glides = detectGlideSegments(points, segments, varioS, turnS, heading, speed);
+    const glides = detectGlideSegments(points, segments, varioS, turnS, heading, speedS);
 
     // Estimate wind from thermal drift
     const wind = estimateWind(points, segments);
@@ -897,6 +899,10 @@ function analyze(points) {
     // Summary statistics
     const durationTotal = points[n - 1].timeS - points[0].timeS;
     const maxAlt = Math.max(...points.map(p => p.altM));
+    const minAlt = Math.min(...points.map(p => p.altM));
+    const avgAlt = points.reduce((sum, p) => sum + p.altM, 0) / n;
+    const altitudeRange = maxAlt - minAlt;
+
     const timeToFirst = segments.length > 0 ? segments[0].startT : null;
     const best = segments.length > 0
         ? segments.reduce((a, b) =>
@@ -904,30 +910,165 @@ function analyze(points) {
           )
         : null;
 
+    // Thermal statistics
+    const totalThermalTime = segments.reduce((sum, t) => sum + t.durationS, 0);
+    const avgThermalDuration = segments.length > 0 ? totalThermalTime / segments.length : 0;
+    const totalAltitudeGained = segments.reduce((sum, t) => {
+        const startAlt = points[t.startIdx].altM;
+        const endAlt = points[t.endIdx].altM;
+        return sum + Math.max(0, endAlt - startAlt);
+    }, 0);
+
+    // Thermal turning analysis
+    let leftTurns = 0;
+    let rightTurns = 0;
+    let totalTurnRate = 0;
+    let turnRateSamples = 0;
+
+    for (const thermal of segments) {
+        for (let i = thermal.startIdx; i <= thermal.endIdx; i++) {
+            if (Math.abs(turnS[i]) > CONFIG.MIN_TURN_RATE) {
+                if (turnS[i] > 0) rightTurns++;
+                else leftTurns++;
+                totalTurnRate += Math.abs(turnS[i]);
+                turnRateSamples++;
+            }
+        }
+    }
+
+    const totalTurns = leftTurns + rightTurns;
+    const thermalDirectionPreference = totalTurns > 0 ? {
+        right: (rightTurns / totalTurns) * 100,
+        left: (leftTurns / totalTurns) * 100,
+        predominant: rightTurns > leftTurns ? 'right' : 'left'
+    } : null;
+    const avgThermalTurnRate = turnRateSamples > 0 ? totalTurnRate / turnRateSamples : 0;
+
     // Glide statistics
     const totalGlideDistance = glides.reduce((sum, g) => sum + g.straightDistance, 0);
     const avgGlideRatio = glides.filter(g => g.glideRatio).length > 0
         ? glides.filter(g => g.glideRatio).reduce((sum, g) => sum + g.glideRatio, 0) / glides.filter(g => g.glideRatio).length
         : null;
+    const bestGlideRatio = glides.filter(g => g.glideRatio).length > 0
+        ? Math.max(...glides.filter(g => g.glideRatio).map(g => g.glideRatio))
+        : null;
+    const worstGlideRatio = glides.filter(g => g.glideRatio).length > 0
+        ? Math.min(...glides.filter(g => g.glideRatio).map(g => g.glideRatio))
+        : null;
+
+    // Total track distance (entire flight path)
+    let totalTrackDistance = 0;
+    for (let i = 1; i < n; i++) {
+        totalTrackDistance += haversineM(
+            points[i - 1].lat, points[i - 1].lon,
+            points[i].lat, points[i].lon
+        );
+    }
+
+    // Straight-line distance (start to end)
+    const straightLineDistance = haversineM(
+        points[0].lat, points[0].lon,
+        points[n - 1].lat, points[n - 1].lon
+    );
+    const trackEfficiency = totalTrackDistance > 0 ? (straightLineDistance / totalTrackDistance) * 100 : 0;
+
+    // Speed statistics
+    const avgGroundSpeed = speedS.reduce((sum, s) => sum + s, 0) / n; // m/s
+    const maxGroundSpeed = Math.max(...speedS); // m/s
+
+    // Flight phases (climbing, gliding, searching)
+    const totalGlideTime = glides.reduce((sum, g) => sum + g.durationS, 0);
+    const searchingGlides = glides.filter(g => g.glideType === 'searching');
+    const timeSearching = searchingGlides.reduce((sum, g) => sum + g.durationS, 0);
+    const timeGliding = totalGlideTime - timeSearching;
+
+    const altLostGliding = glides.filter(g => g.glideType !== 'searching')
+        .reduce((sum, g) => sum + Math.abs(Math.min(0, g.altChange)), 0);
+    const altLostSearching = searchingGlides
+        .reduce((sum, g) => sum + Math.abs(Math.min(0, g.altChange)), 0);
+
+    // Personal bests
+    const longestThermal = segments.length > 0
+        ? segments.reduce((a, b) => a.durationS > b.durationS ? a : b)
+        : null;
+    const longestGlide = glides.length > 0
+        ? glides.reduce((a, b) => a.straightDistance > b.straightDistance ? a : b)
+        : null;
+
+    // Speedbar analysis details
+    const worthwhileSpeedbarOps = speedbarOpportunities.filter(op => op.estimatedBenefit.worthIt);
+    const totalTimeSavings = worthwhileSpeedbarOps.reduce((sum, op) => sum + op.estimatedBenefit.timeSavedSeconds, 0);
+    const totalAltCost = worthwhileSpeedbarOps.reduce((sum, op) => sum + op.estimatedBenefit.altitudeCostMeters, 0);
+
+    // Low altitude warnings (below 400m AGL - assuming launch alt is first point)
+    const launchAlt = points[0].altM;
+    let lowAltitudeWarnings = 0;
+    const LOW_ALT_THRESHOLD = 400; // meters AGL
+    for (const point of points) {
+        if (point.altM - launchAlt < LOW_ALT_THRESHOLD && point.altM > launchAlt) {
+            lowAltitudeWarnings++;
+            break; // Count as one warning event per flight for simplicity
+        }
+    }
 
     return {
+        // Basic flight stats
         durationTotal,
         maxAlt,
+        minAlt,
+        avgAlt,
+        altitudeRange,
         segments,
         timeToFirstThermal: timeToFirst,
         best,
         gpsGaps: gapCount,
+        lowAltitudeWarnings,
+
+        // Thermal performance
+        totalThermalTime,
+        avgThermalDuration,
+        totalAltitudeGained,
+        thermalDirectionPreference,
+        avgThermalTurnRate,
+
         // Glide analysis
         glides,
         glideCount: glides.length,
         totalGlideDistance,
         avgGlideRatio,
+        bestGlideRatio,
+        worstGlideRatio,
+
+        // Track & speed
+        totalTrackDistance,
+        straightLineDistance,
+        trackEfficiency,
+        avgGroundSpeed,  // m/s
+        maxGroundSpeed,  // m/s
+
+        // Flight phases
+        timeClimbing: totalThermalTime,
+        timeGliding,
+        timeSearching,
+        altGainedClimbing: totalAltitudeGained,
+        altLostGliding,
+        altLostSearching,
+
+        // Personal bests
+        longestThermal,
+        longestGlide,
+
         // Wind analysis
         wind,
+
         // Speedbar coaching
         speedbarOpportunities,
         speedbarOpportunityCount: speedbarOpportunities.length,
-        // Also include raw data for visualization
+        worthwhileSpeedbarCount: worthwhileSpeedbarOps.length,
+        totalTimeSavings,
+        totalAltCost,
+
+        // Raw data for visualization
         points,
         vario: varioS,
         turnRate: turnS,

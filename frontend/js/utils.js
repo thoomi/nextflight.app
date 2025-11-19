@@ -84,6 +84,37 @@ function formatWind(speed, direction, confidence) {
 }
 
 /**
+ * Format percentage
+ * @param {number|null|undefined} value - Percentage value (0-100)
+ * @param {number} [decimals=0] - Number of decimal places
+ * @returns {string} - Formatted percentage string
+ */
+function formatPercentage(value, decimals = 0) {
+    if (value === null || value === undefined) return '-';
+    return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Format speed in m/s to km/h
+ * @param {number|null|undefined} mps - Speed in m/s
+ * @returns {string} - Formatted speed string in km/h
+ */
+function formatSpeed(mps) {
+    if (mps === null || mps === undefined) return '-';
+    return `${(mps * 3.6).toFixed(1)} km/h`;
+}
+
+/**
+ * Format turn rate
+ * @param {number|null|undefined} degPerSec - Turn rate in deg/s
+ * @returns {string} - Formatted turn rate string
+ */
+function formatTurnRate(degPerSec) {
+    if (degPerSec === null || degPerSec === undefined) return '-';
+    return `${degPerSec.toFixed(1)} °/s`;
+}
+
+/**
  * Clamp a number between min and max values
  * @param {number} value - Value to clamp
  * @param {number} min - Minimum allowed value
@@ -297,6 +328,9 @@ if (typeof module !== 'undefined' && module.exports) {
         formatDistance,
         formatGlideRatio,
         formatWind,
+        formatPercentage,
+        formatSpeed,
+        formatTurnRate,
         clamp,
         truncateText,
         debounce,
