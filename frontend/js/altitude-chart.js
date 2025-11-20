@@ -14,6 +14,7 @@ class AltitudeChart {
         this.onPointClick = null; // Callback when point is clicked
         this.annotations = []; // Annotation markers
         this.isDragging = false; // Track dragging state
+        this.highlightedSegment = null; // Highlighted segment for walkthrough
 
         // Bind event handlers
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
@@ -117,6 +118,11 @@ class AltitudeChart {
             this.drawAGLFill(ctx, points, terrainHeights, xScale, yScale);
         }
 
+        // Draw highlighted segment (for walkthrough)
+        if (this.highlightedSegment) {
+            this.drawHighlightedSegment(ctx, xScale, margin, chartHeight);
+        }
+
         // Draw altitude line
         this.drawAltitudeLine(ctx, points, xScale, yScale);
 
@@ -155,6 +161,39 @@ class AltitudeChart {
 
             ctx.fillRect(x1, top, x2 - x1, height);
         });
+    }
+
+    /**
+     * Draw highlighted segment for walkthrough mode
+     */
+    drawHighlightedSegment(ctx, xScale, margin, chartHeight) {
+        if (!this.flightData || !this.highlightedSegment) return;
+
+        const { startIdx, endIdx } = this.highlightedSegment;
+        const points = this.flightData.points;
+
+        if (startIdx >= 0 && endIdx < points.length) {
+            const startTime = points[startIdx].timeS;
+            const endTime = points[endIdx].timeS;
+            const x1 = xScale(startTime);
+            const x2 = xScale(endTime);
+
+            // Draw subtle blue-tinted overlay
+            ctx.fillStyle = 'rgba(129, 140, 248, 0.12)';
+            ctx.fillRect(x1, margin.top, x2 - x1, chartHeight);
+
+            // Draw dashed borders on left and right only
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(x1, margin.top);
+            ctx.lineTo(x1, margin.top + chartHeight);
+            ctx.moveTo(x2, margin.top);
+            ctx.lineTo(x2, margin.top + chartHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
 
     /**
@@ -520,6 +559,24 @@ class AltitudeChart {
      */
     setAnnotations(annotations) {
         this.annotations = annotations;
+        this.draw();
+    }
+
+    /**
+     * Highlight a segment on the chart (for walkthrough mode)
+     * @param {number} startIdx - Start point index
+     * @param {number} endIdx - End point index
+     */
+    highlightSegment(startIdx, endIdx) {
+        this.highlightedSegment = { startIdx, endIdx };
+        this.draw();
+    }
+
+    /**
+     * Clear highlighted segment
+     */
+    clearHighlight() {
+        this.highlightedSegment = null;
         this.draw();
     }
 

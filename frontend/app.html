@@ -833,7 +833,7 @@
       /* Walkthrough Bar */
       .walkthrough-bar {
         position: absolute;
-        top: -18px;
+        top: -24px;
         left: 0;
         right: 0;
         background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
@@ -843,8 +843,8 @@
         display: flex;
         align-items: flex-start;
         gap: 12px;
-        padding: 10px 16px;
-        min-height: 52px;
+        padding: 8px 16px;
+        height: 70px;
         z-index: 2500;
         animation: slideDown 0.3s ease-out;
       }
@@ -915,7 +915,7 @@
         color: #334155;
         line-height: 1.5;
         flex: 1;
-        max-height: 4.5em;
+        max-height: 6em;
         overflow-y: auto;
       }
 
@@ -970,9 +970,10 @@
       /* Mobile adjustments for walkthrough */
       @media (max-width: 768px) {
         .walkthrough-bar {
-          padding: 10px;
+          top: -30px;
+          padding: 8px 10px;
           gap: 8px;
-          min-height: 50px;
+          height: 70px;
         }
 
         .walkthrough-nav-btn {
@@ -987,7 +988,7 @@
 
         .walkthrough-item-text {
           font-size: 12px;
-          max-height: 3em;
+          max-height: 6em;
         }
 
         .walkthrough-item-icon {

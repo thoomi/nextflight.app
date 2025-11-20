@@ -1206,6 +1206,11 @@ function exitWalkthrough() {
     appState.walkthrough.items = [];
     appState.walkthrough.currentIndex = 0;
 
+    // Clear chart highlight
+    if (appState.altitudeChart) {
+        appState.altitudeChart.clearHighlight();
+    }
+
     setVisible(DOM_IDS.walkthroughBar, false);
 }
 
