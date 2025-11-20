@@ -58,6 +58,7 @@
         flex-direction: column;
         flex-shrink: 0;
         transition: height 0.3s ease;
+        position: relative;
       }
 
       .bottom-bar.collapsed .bottom-bar-content {
@@ -65,6 +66,10 @@
       }
 
       .bottom-bar.collapsed .bottom-bar-tabs {
+        display: none;
+      }
+
+      .bottom-bar.collapsed .walkthrough-bar {
         display: none;
       }
 
@@ -108,6 +113,50 @@
         color: #f97316;
         border-bottom-color: #f97316;
         background: #ffffff;
+      }
+
+      /* Coaching tab - make it stand out */
+      .tab-btn-coaching {
+        position: relative;
+      }
+
+      .tab-btn-coaching:not(.active) {
+        color: #f97316;
+        font-weight: 700;
+      }
+
+      /* Badge for coaching tab */
+      .tab-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        margin-left: 6px;
+        background: #f97316;
+        color: white;
+        border-radius: 9px;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        animation: badge-pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes badge-pulse {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 0.9;
+        }
+      }
+
+      .tab-btn.active .tab-badge {
+        animation: none;
+        opacity: 0.8;
       }
 
       .tab-spacer {
@@ -215,14 +264,6 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         padding: 16px;
         z-index: 1000;
-      }
-
-      .coaching-panel {
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        max-width: 600px;
-        width: calc(100% - 40px);
       }
 
       .hidden {
@@ -470,20 +511,16 @@
         }
 
         /* Scrollable tabs with fade indicator */
-        .bottom-bar-tabs {
-          position: relative;
-          padding-right: 40px;
-        }
-
-        .bottom-bar-tabs::after {
+        .bottom-bar::before {
           content: '';
           position: absolute;
           right: 0;
           top: 0;
-          bottom: 0;
-          width: 40px;
+          height: 43px;
+          width: 50px;
           background: linear-gradient(to right, transparent, #f8fafc);
           pointer-events: none;
+          z-index: 5;
         }
 
         .tab-btn {
@@ -583,16 +620,16 @@
       /* Metrics Cards Grid */
       .metrics-cards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 8px;
         padding: 8px;
       }
 
       /* Individual Metric Card */
       .metric-card {
         background: #ffffff;
-        border-radius: 12px;
-        padding: 16px;
+        border-radius: 8px;
+        padding: 10px;
         border: 1px solid #e2e8f0;
         transition: all 0.3s ease;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -608,42 +645,42 @@
       .metric-card-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
+        gap: 6px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
         border-bottom: 1px solid #e2e8f0;
       }
 
       .metric-card-icon {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
         color: #f97316;
         flex-shrink: 0;
       }
 
       .metric-card-title {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
         color: #334155;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
       }
 
       /* Hero Metric (Large Display) */
       .metric-card-hero {
-        margin-bottom: 16px;
+        margin-bottom: 10px;
         text-align: center;
       }
 
       .metric-hero-value {
-        font-size: 32px;
+        font-size: 24px;
         font-weight: 700;
         color: #f97316;
         line-height: 1.2;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       }
 
       .metric-hero-label {
-        font-size: 11px;
+        font-size: 9px;
         color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -654,17 +691,17 @@
       .metric-card-stats {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 8px;
       }
 
       .metric-stat {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
       }
 
       .metric-stat-label {
-        font-size: 10px;
+        font-size: 9px;
         color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -672,16 +709,347 @@
       }
 
       .metric-stat-value {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         color: #1e293b;
       }
 
-      /* Coaching grid */
+      /* Coaching Walkthrough Styles */
       #coachingTabContent {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        padding: 0;
+      }
+
+      .coaching-walkthrough {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 12px;
+      }
+
+      .coaching-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+
+      .coaching-section {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        border-left: 4px solid;
+        transition: all 0.2s;
+      }
+
+      .coaching-section:hover {
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .coaching-section-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .coaching-section-icon {
+        font-size: 20px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .coaching-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.3;
+      }
+
+      .coaching-section-subtitle {
+        font-size: 10px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+
+      .coaching-items {
+        display: flex;
+        flex-direction: column;
         gap: 8px;
+      }
+
+      .coaching-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .coaching-item:hover {
+        background: rgba(255, 255, 255, 0.9);
+        transform: translateX(3px);
+      }
+
+      .coaching-item-bullet {
+        font-size: 16px;
+        line-height: 1;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .coaching-item-text {
+        font-size: 12px;
+        color: #334155;
+        line-height: 1.5;
+        flex: 1;
+      }
+
+      /* Walkthrough Start Button */
+      .walkthrough-start-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+      }
+
+      .walkthrough-start-btn:hover {
+        background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+      }
+
+      /* Walkthrough Bar */
+      .walkthrough-bar {
+        position: absolute;
+        top: -18px;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+        backdrop-filter: blur(10px);
+        border-bottom: 2px solid #f97316;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 16px;
+        min-height: 52px;
+        z-index: 2500;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .walkthrough-content {
+        flex: 1;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .walkthrough-progress {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        margin-top: 4px;
+      }
+
+      .walkthrough-progress-text {
+        font-size: 9px;
+        font-weight: 700;
+        color: #f97316;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+      }
+
+      .walkthrough-item-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .walkthrough-item-icon {
+        font-size: 18px;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .walkthrough-item-text {
+        font-size: 13px;
+        color: #334155;
+        line-height: 1.5;
+        flex: 1;
+        max-height: 4.5em;
+        overflow-y: auto;
+      }
+
+      .walkthrough-nav-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f97316;
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        margin-top: 6px;
+      }
+
+      .walkthrough-nav-btn:hover:not(:disabled) {
+        background: #ea580c;
+        transform: scale(1.1);
+      }
+
+      .walkthrough-nav-btn:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .walkthrough-exit-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        margin-top: 6px;
+      }
+
+      .walkthrough-exit-btn:hover {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      /* Mobile adjustments for walkthrough */
+      @media (max-width: 768px) {
+        .walkthrough-bar {
+          padding: 10px;
+          gap: 8px;
+          min-height: 50px;
+        }
+
+        .walkthrough-nav-btn {
+          width: 32px;
+          height: 32px;
+          margin-top: 4px;
+        }
+
+        .walkthrough-exit-btn {
+          margin-top: 4px;
+        }
+
+        .walkthrough-item-text {
+          font-size: 12px;
+          max-height: 3em;
+        }
+
+        .walkthrough-item-icon {
+          font-size: 16px;
+        }
+
+        .walkthrough-start-btn {
+          padding: 6px 10px;
+          font-size: 11px;
+        }
+      }
+
+      /* Empty States */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0px 15px;
+        text-align: center;
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .empty-state-icon {
+        width: 48px;
+        height: 48px;
+        color: #cbd5e1;
+        margin-bottom: 5px;
+      }
+
+      .empty-state-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 5px;
+      }
+
+      .empty-state-text {
+        font-size: 13px;
+        color: #94a3b8;
+        max-width: 280px;
+      }
+
+      /* Chart empty state positioning */
+      .chart-container {
+        position: relative;
+      }
+
+      .chart-container .empty-state {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #ffffff;
+        z-index: 1;
+      }
+
+      .chart-container canvas {
+        position: relative;
+        z-index: 2;
       }
 
       /* Annotations grid */
@@ -940,24 +1308,46 @@
           </div>
         </div>
 
-        <!-- Coaching Panel (floating) -->
-        <div id="coachingPanel" class="floating-panel coaching-panel hidden">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-slate-900">Coaching Feedback</h2>
-            <button id="closeCoaching" class="text-slate-400 hover:text-slate-600">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div id="coachingContent" class="space-y-3"></div>
-        </div>
       </div>
 
       <!-- Bottom Bar -->
       <div id="bottomBar" class="bottom-bar">
         <!-- Resize Handle -->
         <div id="resizeHandle" class="resize-handle"></div>
+
+        <!-- Walkthrough Bar (hidden by default, overlays tabs when active) -->
+        <div id="walkthroughBar" class="walkthrough-bar hidden">
+          <button id="walkthroughPrevBtn" class="walkthrough-nav-btn" title="Previous">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="walkthrough-content">
+            <div class="walkthrough-progress">
+              <span id="walkthroughProgress" class="walkthrough-progress-text">1 / 12</span>
+            </div>
+            <div class="walkthrough-item-container">
+              <div id="walkthroughItemIcon" class="walkthrough-item-icon">✓</div>
+              <div id="walkthroughItemText" class="walkthrough-item-text">
+                Loading coaching item...
+              </div>
+            </div>
+          </div>
+
+          <button id="walkthroughNextBtn" class="walkthrough-nav-btn" title="Next">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button id="walkthroughExitBtn" class="walkthrough-exit-btn" title="Exit Walkthrough">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
         <!-- Tabs -->
         <div class="bottom-bar-tabs">
           <button class="tab-btn active" data-tab="upload">Upload</button>
@@ -965,7 +1355,10 @@
           <button class="tab-btn" data-tab="info">Info</button>
           <button class="tab-btn" data-tab="thermals">Thermals</button>
           <button class="tab-btn" data-tab="glides">Glides</button>
-          <button class="tab-btn" data-tab="coaching">Coaching</button>
+          <button class="tab-btn tab-btn-coaching" data-tab="coaching">
+            Coaching
+            <span id="coachingBadge" class="tab-badge hidden">0</span>
+          </button>
           <button class="tab-btn" data-tab="notes">Notes</button>
         </div>
 
@@ -1000,6 +1393,13 @@
           <div id="tabChart" class="tab-content chart-tab">
             <div class="chart-container">
               <canvas id="altitudeChart"></canvas>
+              <div id="chartEmptyState" class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <p class="empty-state-title">No Flight Data</p>
+                <p class="empty-state-text">Upload a flight to see the altitude chart</p>
+              </div>
             </div>
           </div>
 
@@ -1014,13 +1414,17 @@
                   <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
-                  <span class="metric-card-title">Flight Overview</span>
+                  <span class="metric-card-title">Flight Summary</span>
                 </div>
                 <div class="metric-card-hero">
                   <div class="metric-hero-value" id="metricDuration">--</div>
                   <div class="metric-hero-label">Duration</div>
                 </div>
                 <div class="metric-card-stats">
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">Track Dist</span>
+                    <span class="metric-stat-value" id="metricTotalDistance">--</span>
+                  </div>
                   <div class="metric-stat">
                     <span class="metric-stat-label">Max Alt</span>
                     <span class="metric-stat-value" id="metricMaxAlt">--</span>
@@ -1030,8 +1434,8 @@
                     <span class="metric-stat-value" id="metricThermals">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">First Lift</span>
-                    <span class="metric-stat-value" id="metricFirstLift">--</span>
+                    <span class="metric-stat-label">Max Speed</span>
+                    <span class="metric-stat-value" id="metricMaxSpeed">--</span>
                   </div>
                 </div>
               </div>
@@ -1062,10 +1466,6 @@
                     <span class="metric-stat-value" id="metricTotalThermalTime">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">Avg Duration</span>
-                    <span class="metric-stat-value" id="metricAvgThermalDuration">--</span>
-                  </div>
-                  <div class="metric-stat">
                     <span class="metric-stat-label">Centering</span>
                     <span class="metric-stat-value" id="metricCenteringQuality">--</span>
                   </div>
@@ -1090,49 +1490,21 @@
                     <span class="metric-stat-value" id="metricAvgGlideRatio">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">Glides</span>
-                    <span class="metric-stat-value" id="metricGlides">--</span>
-                  </div>
-                  <div class="metric-stat">
-                    <span class="metric-stat-label">Total Dist</span>
-                    <span class="metric-stat-value" id="metricTotalGlideDist">--</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Track & Speed Card -->
-              <div class="metric-card">
-                <div class="metric-card-header">
-                  <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                  </svg>
-                  <span class="metric-card-title">Track & Speed</span>
-                </div>
-                <div class="metric-card-hero">
-                  <div class="metric-hero-value" id="metricMaxSpeed">--</div>
-                  <div class="metric-hero-label">Max Speed</div>
-                </div>
-                <div class="metric-card-stats">
-                  <div class="metric-stat">
                     <span class="metric-stat-label">Avg Speed</span>
                     <span class="metric-stat-value" id="metricAvgSpeed">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">Track Dist</span>
-                    <span class="metric-stat-value" id="metricTotalDistance">--</span>
+                    <span class="metric-stat-label">Glides</span>
+                    <span class="metric-stat-value" id="metricGlides">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">Straight</span>
+                    <span class="metric-stat-label">Straight Dist</span>
                     <span class="metric-stat-value" id="metricStraightDistance">--</span>
-                  </div>
-                  <div class="metric-stat">
-                    <span class="metric-stat-label">Efficiency</span>
-                    <span class="metric-stat-value" id="metricTrackEfficiency">--</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Flight Phases Card -->
+              <!-- Flight Breakdown Card -->
               <div class="metric-card">
                 <div class="metric-card-header">
                   <svg class="metric-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1158,12 +1530,8 @@
                     <span class="metric-stat-value" id="metricAltClimbing">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">Alt Lost (Glide)</span>
+                    <span class="metric-stat-label">Alt Lost</span>
                     <span class="metric-stat-value" id="metricAltGliding">--</span>
-                  </div>
-                  <div class="metric-stat">
-                    <span class="metric-stat-label">Alt Lost (Search)</span>
-                    <span class="metric-stat-value" id="metricAltSearching">--</span>
                   </div>
                 </div>
               </div>
@@ -1188,6 +1556,10 @@
                   <div class="metric-stat">
                     <span class="metric-stat-label">Range</span>
                     <span class="metric-stat-value" id="metricAltRange">--</span>
+                  </div>
+                  <div class="metric-stat">
+                    <span class="metric-stat-label">First Lift</span>
+                    <span class="metric-stat-value" id="metricFirstLift">--</span>
                   </div>
                   <div class="metric-stat">
                     <span class="metric-stat-label">Low Alt Events</span>
@@ -1254,8 +1626,8 @@
                     <span class="metric-stat-value" id="metricLongestGlide">--</span>
                   </div>
                   <div class="metric-stat">
-                    <span class="metric-stat-label">First Lift</span>
-                    <span class="metric-stat-value" id="metricFirstLift">--</span>
+                    <span class="metric-stat-label">Avg Thermal</span>
+                    <span class="metric-stat-value" id="metricAvgThermalDuration">--</span>
                   </div>
                 </div>
               </div>
@@ -1307,17 +1679,41 @@
 
           <!-- Thermals Tab -->
           <div id="tabThermals" class="tab-content">
-            <div id="thermalsContainer"></div>
+            <div id="thermalsContainer">
+              <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <p class="empty-state-title">No Thermals Yet</p>
+                <p class="empty-state-text">Upload a flight to analyze thermal performance</p>
+              </div>
+            </div>
           </div>
 
           <!-- Glides Tab -->
           <div id="tabGlides" class="tab-content">
-            <div id="glidesContainer"></div>
+            <div id="glidesContainer">
+              <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-9 5 9M5 21h14"/>
+                </svg>
+                <p class="empty-state-title">No Glides Yet</p>
+                <p class="empty-state-text">Upload a flight to analyze glide segments</p>
+              </div>
+            </div>
           </div>
 
           <!-- Coaching Tab -->
           <div id="tabCoaching" class="tab-content">
-            <div id="coachingTabContent"></div>
+            <div id="coachingTabContent">
+              <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <p class="empty-state-title">No Coaching Available</p>
+                <p class="empty-state-text">Upload a flight to get personalized coaching feedback</p>
+              </div>
+            </div>
           </div>
 
           <!-- Notes Tab -->

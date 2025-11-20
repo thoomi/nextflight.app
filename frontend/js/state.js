@@ -26,6 +26,13 @@ class AppState {
         this.annotationMode = false;
         this.annotationClickHandler = null;
 
+        // Walkthrough state
+        this.walkthrough = {
+            active: false,
+            items: [],
+            currentIndex: 0
+        };
+
         // Replay state
         this.replay = this.createReplayState();
     }

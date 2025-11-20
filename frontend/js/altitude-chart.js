@@ -13,14 +13,23 @@ class AltitudeChart {
         this.replayPointIndex = null; // Current replay position
         this.onPointClick = null; // Callback when point is clicked
         this.annotations = []; // Annotation markers
+        this.isDragging = false; // Track dragging state
 
         // Bind event handlers
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mouseleave', () => {
+            this.isDragging = false;
             this.hoveredPoint = null;
             this.draw();
         });
+
+        // Touch event handlers
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
 
         // Resize canvas to match display size
         this.resizeCanvas();
@@ -72,7 +81,7 @@ class AltitudeChart {
         ctx.clearRect(0, 0, width, height);
 
         // Margins
-        const margin = { top: 5, right: 10, bottom: 15, left: 40 };
+        const margin = { top: 10, right: 10, bottom: 15, left: 40 };
         const chartWidth = width - margin.left - margin.right;
         const chartHeight = height - margin.top - margin.bottom;
 
@@ -267,13 +276,13 @@ class AltitudeChart {
     getAGLColor(aglMeters) {
         // Color based on altitude above ground (AGL)
         // High clearance = green, medium = yellow, low = red/orange
-        if (aglMeters > 300) {
+        if (aglMeters > 200) {
             return 'rgba(34, 197, 94, 0.15)'; // Green (safe)
-        } else if (aglMeters > 200) {
-            return 'rgba(132, 204, 22, 0.15)'; // Lime (good)
         } else if (aglMeters > 100) {
-            return 'rgba(234, 179, 8, 0.15)'; // Yellow (caution)
+            return 'rgba(132, 204, 22, 0.15)'; // Lime (good)
         } else if (aglMeters > 50) {
+            return 'rgba(234, 179, 8, 0.15)'; // Yellow (caution)
+        } else if (aglMeters > 20) {
             return 'rgba(249, 115, 22, 0.15)'; // Orange (warning)
         } else {
             return 'rgba(239, 68, 68, 0.15)'; // Red (danger)
@@ -458,15 +467,34 @@ class AltitudeChart {
         // Draw current position dot
         ctx.fillStyle = '#f97316';
         ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fill();
 
         // White outline for visibility
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Draw altitude label near the marker with outlined text
+        ctx.save(); // Save canvas state
+
+        const altitudeText = `${Math.round(point.altM)}m`;
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        // Draw black outline first
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(altitudeText, x + 10, y);
+
+        // Draw white fill on top
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(altitudeText, x + 10, y);
+
+        ctx.restore(); // Restore canvas state
     }
 
     /**
@@ -531,12 +559,34 @@ class AltitudeChart {
         const y = e.clientY - rect.top;
 
         // Find closest point
+        const closestIdx = this.getPointIndexFromX(x);
+
+        if (this.isDragging) {
+            // During drag, update replay position immediately
+            if (this.onPointClick && closestIdx !== this.hoveredPoint) {
+                this.hoveredPoint = closestIdx;
+                this.onPointClick(closestIdx, this.flightData.points[closestIdx]);
+                this.draw();
+            }
+        } else {
+            // Normal hover behavior
+            if (this.hoveredPoint !== closestIdx) {
+                this.hoveredPoint = closestIdx;
+                this.draw();
+            }
+        }
+    }
+
+    /**
+     * Get point index from X coordinate
+     */
+    getPointIndexFromX(x) {
         const margin = { left: 50 };
         const chartWidth = this.displayWidth - 70;
         const maxTime = this.flightData.points[this.flightData.points.length - 1].timeS;
         const time = ((x - margin.left) / chartWidth) * maxTime;
 
-        // Binary search for closest point
+        // Find closest point
         let closestIdx = 0;
         let minDist = Infinity;
 
@@ -548,17 +598,46 @@ class AltitudeChart {
             }
         });
 
-        if (this.hoveredPoint !== closestIdx) {
-            this.hoveredPoint = closestIdx;
-            this.draw();
+        return closestIdx;
+    }
+
+    /**
+     * Handle mouse down (start drag)
+     */
+    handleMouseDown(e) {
+        if (!this.flightData) return;
+        this.isDragging = true;
+        this.canvas.style.cursor = 'grabbing';
+
+        // Immediately jump to clicked position
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const closestIdx = this.getPointIndexFromX(x);
+
+        if (this.onPointClick) {
+            this.onPointClick(closestIdx, this.flightData.points[closestIdx]);
         }
     }
 
     /**
-     * Handle click
+     * Handle mouse up (end drag)
+     */
+    handleMouseUp(e) {
+        this.isDragging = false;
+        this.canvas.style.cursor = 'default';
+    }
+
+    /**
+     * Handle click (for single clicks without drag)
      */
     handleClick(e) {
         if (!this.flightData || this.hoveredPoint === null) return;
+
+        // Only handle click if not dragging
+        if (this.isDragging) return;
+
+        // Prevent default to avoid focus/scroll behavior
+        e.preventDefault();
 
         this.selectedPoint = this.hoveredPoint;
         this.draw();
@@ -567,6 +646,51 @@ class AltitudeChart {
         if (this.onPointClick) {
             this.onPointClick(this.hoveredPoint, this.flightData.points[this.hoveredPoint]);
         }
+    }
+
+    /**
+     * Handle touch start
+     */
+    handleTouchStart(e) {
+        if (!this.flightData) return;
+        e.preventDefault();
+
+        this.isDragging = true;
+
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const closestIdx = this.getPointIndexFromX(x);
+
+        if (this.onPointClick) {
+            this.onPointClick(closestIdx, this.flightData.points[closestIdx]);
+        }
+    }
+
+    /**
+     * Handle touch move
+     */
+    handleTouchMove(e) {
+        if (!this.flightData || !this.isDragging) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const closestIdx = this.getPointIndexFromX(x);
+
+        if (this.onPointClick && closestIdx !== this.hoveredPoint) {
+            this.hoveredPoint = closestIdx;
+            this.onPointClick(closestIdx, this.flightData.points[closestIdx]);
+            this.draw();
+        }
+    }
+
+    /**
+     * Handle touch end
+     */
+    handleTouchEnd(e) {
+        this.isDragging = false;
     }
 
     /**

@@ -36,6 +36,9 @@ async function initApp() {
         // Set up compass
         setupCompass();
 
+        // Set up walkthrough listeners
+        setupWalkthroughListeners();
+
         console.log(SUCCESS_MESSAGES.appInitialized);
 
         // DEV: Auto-load sample track for testing (remove in production)
@@ -80,7 +83,6 @@ async function loadSampleTrack() {
         domCache.get(DOM_IDS.fileName).textContent = fileName + ' (auto-loaded)';
 
         // Show floating panels
-        setVisible(DOM_IDS.coachingPanel, true);
         setVisible(DOM_IDS.legendPanel, true);
 
         // Switch to Chart tab after loading
@@ -91,6 +93,10 @@ async function loadSampleTrack() {
 
         updateMetricsPanel(analysis);
         updateCoachingPanel(analysis);
+
+        // Hide empty states when data is loaded
+        const chartEmptyState = document.getElementById('chartEmptyState');
+        if (chartEmptyState) chartEmptyState.style.display = 'none';
         initializeReplay(analysis);
 
         setTimeout(() => {
@@ -149,11 +155,6 @@ function setupFileUpload() {
     clearBtn.addEventListener('click', () => {
         clearFlight();
     });
-
-    // Close coaching panel
-    domCache.get(DOM_IDS.closeCoaching).addEventListener('click', () => {
-        setVisible(DOM_IDS.coachingPanel, false);
-    });
 }
 
 /**
@@ -189,7 +190,6 @@ async function handleFileUpload(file) {
         domCache.get(DOM_IDS.fileName).textContent = file.name;
 
         // Show floating panels
-        setVisible(DOM_IDS.coachingPanel, true);
         setVisible(DOM_IDS.legendPanel, true);
 
         // Switch to Chart tab after loading
@@ -201,6 +201,10 @@ async function handleFileUpload(file) {
         // Update UI after panels are visible
         updateMetricsPanel(analysis);
         updateCoachingPanel(analysis);
+
+        // Hide empty states when data is loaded
+        const chartEmptyState = document.getElementById('chartEmptyState');
+        if (chartEmptyState) chartEmptyState.style.display = 'none';
         initializeReplay(analysis);
 
         // Update altitude chart (after panel is visible so canvas has dimensions)
@@ -274,12 +278,10 @@ function updateMetricsPanel(analysis) {
     domCache.get(DOM_IDS.metricGlides).textContent = analysis.glideCount || 0;
     domCache.get(DOM_IDS.metricAvgGlideRatio).textContent = analysis.avgGlideRatio ? formatGlideRatio(analysis.avgGlideRatio) : '-';
     domCache.get(DOM_IDS.metricBestGlideRatio).textContent = analysis.bestGlideRatio ? formatGlideRatio(analysis.bestGlideRatio) : '-';
-    domCache.get(DOM_IDS.metricTotalGlideDist).textContent = analysis.totalGlideDistance ? formatDistance(analysis.totalGlideDistance) : '-';
 
     // Track & Speed
     domCache.get(DOM_IDS.metricTotalDistance).textContent = formatDistance(analysis.totalTrackDistance);
     domCache.get(DOM_IDS.metricStraightDistance).textContent = formatDistance(analysis.straightLineDistance);
-    domCache.get(DOM_IDS.metricTrackEfficiency).textContent = formatPercentage(analysis.trackEfficiency, 0);
     domCache.get(DOM_IDS.metricAvgSpeed).textContent = formatSpeed(analysis.avgGroundSpeed);
     domCache.get(DOM_IDS.metricMaxSpeed).textContent = formatSpeed(analysis.maxGroundSpeed);
 
@@ -301,7 +303,6 @@ function updateMetricsPanel(analysis) {
     domCache.get(DOM_IDS.metricTimeSearching).textContent = formatTime(analysis.timeSearching) + searchPct;
     domCache.get(DOM_IDS.metricAltClimbing).textContent = '+' + formatAltitude(analysis.altGainedClimbing);
     domCache.get(DOM_IDS.metricAltGliding).textContent = '-' + formatAltitude(analysis.altLostGliding);
-    domCache.get(DOM_IDS.metricAltSearching).textContent = '-' + formatAltitude(analysis.altLostSearching);
 
     // Personal Bests
     if (analysis.longestThermal) {
@@ -348,7 +349,15 @@ function updateThermalsList(thermals) {
     container.innerHTML = '';
 
     if (thermals.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-500">No thermals detected</div>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <p class="empty-state-title">No Thermals Detected</p>
+                <p class="empty-state-text">This flight didn't have any detected thermal segments</p>
+            </div>
+        `;
         return;
     }
 
@@ -479,7 +488,15 @@ function updateGlidesList(glides) {
     container.innerHTML = '';
 
     if (glides.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-500">No glide segments detected</div>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-9 5 9M5 21h14"/>
+                </svg>
+                <p class="empty-state-title">No Glides Detected</p>
+                <p class="empty-state-text">This flight didn't have any detected glide segments</p>
+            </div>
+        `;
         return;
     }
 
@@ -806,56 +823,430 @@ function updateTrailGlideHighlight(glideIndex) {
 }
 
 /**
- * Update coaching panel with feedback
+ * Update coaching tab with feedback
  * @param {Object} analysis - Flight analysis data
  */
 function updateCoachingPanel(analysis) {
     const coaching = generateCoaching(analysis);
     const coachingHTML = generateCoachingHTML(coaching);
 
-    domCache.get(DOM_IDS.coachingContent).innerHTML = coachingHTML;
     domCache.get(DOM_IDS.coachingTabContent).innerHTML = coachingHTML;
+
+    // Update coaching tab badge with count
+    updateCoachingTabBadge(coaching);
+
+    // Attach Start Walkthrough button listener (after HTML is rendered)
+    setTimeout(() => {
+        const startBtn = document.getElementById(DOM_IDS.startWalkthroughBtn);
+        if (startBtn) {
+            startBtn.addEventListener('click', () => startWalkthrough(coaching));
+        }
+    }, 0);
 }
 
 /**
- * Generate HTML for coaching feedback sections
+ * Update coaching tab badge with count
+ * @param {Object} coaching - Coaching data
+ */
+function updateCoachingTabBadge(coaching) {
+    const totalCount =
+        coaching.whatWentWell.length +
+        coaching.whatToImprove.length +
+        coaching.safetyMindset.length +
+        coaching.nextFlightPlan.length;
+
+    const badge = domCache.get(DOM_IDS.coachingBadge);
+    if (totalCount > 0) {
+        badge.textContent = totalCount;
+        badge.classList.remove(CSS_CLASSES.hidden);
+    } else {
+        badge.classList.add(CSS_CLASSES.hidden);
+    }
+}
+
+/**
+ * Generate HTML for coaching feedback sections (walkthrough style)
  * @param {Object} coaching - Coaching data
  * @returns {string} - HTML string
  */
 function generateCoachingHTML(coaching) {
     const sections = [
-        { title: '✓ What went well', items: coaching.whatWentWell, color: 'green' },
-        { title: '↑ What to improve', items: coaching.whatToImprove, color: 'orange' },
-        { title: '⚠️ Safety & Mindset', items: coaching.safetyMindset, color: 'red' },
-        { title: '🎯 Next-flight plan', items: coaching.nextFlightPlan, color: 'blue' }
+        {
+            title: '✓ Strengths',
+            subtitle: 'What you did well',
+            items: coaching.whatWentWell,
+            bgColor: 'bg-green-50',
+            borderColor: 'border-green-200',
+            iconColor: 'text-green-600',
+            icon: '✓'
+        },
+        {
+            title: '↑ Growth Areas',
+            subtitle: 'Opportunities to level up',
+            items: coaching.whatToImprove,
+            bgColor: 'bg-orange-50',
+            borderColor: 'border-orange-200',
+            iconColor: 'text-orange-600',
+            icon: '↑'
+        },
+        {
+            title: '⚠️ Mindset & Safety',
+            subtitle: 'Keep this in mind',
+            items: coaching.safetyMindset,
+            bgColor: 'bg-red-50',
+            borderColor: 'border-red-200',
+            iconColor: 'text-red-600',
+            icon: '⚠️'
+        },
+        {
+            title: '🎯 Action Plan',
+            subtitle: 'Focus for your next flight',
+            items: coaching.nextFlightPlan,
+            bgColor: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+            iconColor: 'text-blue-600',
+            icon: '🎯'
+        }
     ];
 
-    let html = '';
+    let html = '<div class="coaching-walkthrough">';
+
+    // Header
+    html += `
+        <div class="coaching-header">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 mb-1">Flight Debrief</h3>
+                    <p class="text-xs text-slate-600">Review your performance and plan improvements</p>
+                </div>
+                <button id="startWalkthroughBtn" class="walkthrough-start-btn">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    Start Walkthrough
+                </button>
+            </div>
+        </div>
+    `;
 
     sections.forEach(section => {
         if (section.items.length > 0) {
             html += `
-                <div class="metric-card">
-                    <div class="text-sm font-medium text-slate-900 mb-2">${section.title}</div>
-                    <ul class="text-xs text-slate-700 space-y-1 list-disc list-inside">
-                        ${section.items.map(item => `<li>${item}</li>`).join('')}
-                    </ul>
+                <div class="coaching-section ${section.bgColor} ${section.borderColor}">
+                    <div class="coaching-section-header">
+                        <div class="coaching-section-icon ${section.iconColor}">${section.icon}</div>
+                        <div>
+                            <div class="coaching-section-title">${section.title}</div>
+                            <div class="coaching-section-subtitle">${section.subtitle}</div>
+                        </div>
+                    </div>
+                    <div class="coaching-items">
+                        ${section.items.map(item => `
+                            <div class="coaching-item">
+                                <div class="coaching-item-bullet ${section.iconColor}">•</div>
+                                <div class="coaching-item-text">${item}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }
     });
 
-    if (html === '') {
-        html = '<div class="text-sm text-slate-500">No coaching feedback available</div>';
+    html += '</div>';
+
+    if (coaching.whatWentWell.length === 0 && coaching.whatToImprove.length === 0 &&
+        coaching.safetyMindset.length === 0 && coaching.nextFlightPlan.length === 0) {
+        html = '<div class="text-sm text-slate-500 p-4">No coaching feedback available</div>';
     }
 
     return html;
 }
 
 /**
+ * Start walkthrough mode
+ * @param {Object} coaching - Coaching data
+ */
+function startWalkthrough(coaching) {
+    if (!appState.hasFlightData()) {
+        alert('No flight data available');
+        return;
+    }
+
+    const analysis = appState.currentAnalysis;
+
+    // Build flat list of walkthrough items with jump targets
+    const items = [];
+
+    const sections = [
+        { type: 'strength', icon: '✓', items: coaching.whatWentWell, color: 'text-green-600' },
+        { type: 'improve', icon: '↑', items: coaching.whatToImprove, color: 'text-orange-600' },
+        { type: 'safety', icon: '⚠️', items: coaching.safetyMindset, color: 'text-red-600' },
+        { type: 'plan', icon: '🎯', items: coaching.nextFlightPlan, color: 'text-blue-600' }
+    ];
+
+    sections.forEach(section => {
+        section.items.forEach(text => {
+            const item = {
+                type: section.type,
+                icon: section.icon,
+                text: text,
+                color: section.color,
+                jumpTarget: null // Will be populated based on text content
+            };
+
+            // Smart linking: detect what the coaching item refers to and add jump target
+            item.jumpTarget = detectJumpTarget(text, analysis);
+
+            items.push(item);
+        });
+    });
+
+    if (items.length === 0) {
+        alert('No coaching items to show in walkthrough');
+        return;
+    }
+
+    // Set walkthrough state
+    appState.walkthrough.items = items;
+    appState.walkthrough.currentIndex = 0;
+    appState.walkthrough.active = true;
+
+    // Show walkthrough bar
+    setVisible(DOM_IDS.walkthroughBar, true);
+
+    // Switch to Chart tab for better visibility
+    switchToTab(TABS.chart);
+
+    // Show first item
+    updateWalkthroughDisplay();
+}
+
+/**
+ * Detect jump target for a coaching item based on its text content
+ * @param {string} text - Coaching item text
+ * @param {Object} analysis - Flight analysis data
+ * @returns {Object|null} - Jump target with type and data
+ */
+function detectJumpTarget(text, analysis) {
+    const lowerText = text.toLowerCase();
+
+    // First thermal / lift detection
+    if (lowerText.includes('first lift') || lowerText.includes('first thermal') || lowerText.includes('found lift quickly')) {
+        if (analysis.segments && analysis.segments.length > 0) {
+            return { type: 'thermal', index: 0 };
+        }
+    }
+
+    // Best thermal / strongest climb
+    if (lowerText.includes('strongest climb') || lowerText.includes('best') || lowerText.includes('centering')) {
+        if (analysis.best) {
+            const bestIndex = analysis.segments.findIndex(s =>
+                s.avgClimb === analysis.best.avgClimb && s.maxClimb === analysis.best.maxClimb
+            );
+            if (bestIndex >= 0) {
+                return { type: 'thermal', index: bestIndex };
+            }
+        }
+    }
+
+    // Speedbar opportunities
+    if (lowerText.includes('speedbar')) {
+        if (analysis.glides && analysis.glides.length > 0) {
+            const speedbarGlide = analysis.glides.find(g => g.speedbarOpportunity);
+            if (speedbarGlide) {
+                const index = analysis.glides.indexOf(speedbarGlide);
+                return { type: 'glide', index: index };
+            }
+        }
+    }
+
+    // Glide efficiency
+    if (lowerText.includes('glide') && (lowerText.includes('indirect') || lowerText.includes('efficiency'))) {
+        if (analysis.glides && analysis.glides.length > 0) {
+            const inefficientGlide = analysis.glides.find(g => g.efficiency && g.efficiency < 0.85);
+            if (inefficientGlide) {
+                const index = analysis.glides.indexOf(inefficientGlide);
+                return { type: 'glide', index: index };
+            }
+        }
+    }
+
+    // Default: jump to middle of flight for general tips
+    return { type: 'time', ratio: 0.3 };
+}
+
+/**
+ * Update walkthrough display with current item
+ */
+function updateWalkthroughDisplay() {
+    const { items, currentIndex } = appState.walkthrough;
+
+    if (items.length === 0) return;
+
+    const item = items[currentIndex];
+    const total = items.length;
+
+    // Update progress
+    domCache.get(DOM_IDS.walkthroughProgress).textContent = `${currentIndex + 1} / ${total}`;
+
+    // Update icon and text
+    const iconEl = domCache.get(DOM_IDS.walkthroughItemIcon);
+    iconEl.textContent = item.icon;
+    iconEl.className = `walkthrough-item-icon ${item.color}`;
+
+    domCache.get(DOM_IDS.walkthroughItemText).textContent = item.text;
+
+    // Update button states
+    domCache.get(DOM_IDS.walkthroughPrevBtn).disabled = currentIndex === 0;
+    domCache.get(DOM_IDS.walkthroughNextBtn).disabled = currentIndex === total - 1;
+
+    // Auto-jump to relevant moment
+    if (item.jumpTarget) {
+        performWalkthroughJump(item.jumpTarget);
+    }
+}
+
+/**
+ * Jump to a specific moment based on walkthrough target
+ * @param {Object} target - Jump target with type and data
+ */
+function performWalkthroughJump(target) {
+    if (!appState.hasFlightData()) return;
+
+    const analysis = appState.currentAnalysis;
+    const points = analysis.points;
+
+    switch (target.type) {
+        case 'thermal': {
+            // Jump to specific thermal
+            if (analysis.segments && target.index < analysis.segments.length) {
+                const thermal = analysis.segments[target.index];
+                const endTime = points[thermal.endIdx].timeS - points[0].timeS;
+
+                // Seek to the end of the thermal (where you can see the full context)
+                seekReplay(endTime);
+
+                // Highlight on chart if available
+                if (appState.altitudeChart) {
+                    appState.altitudeChart.highlightSegment(thermal.startIdx, thermal.endIdx);
+                }
+            }
+            break;
+        }
+
+        case 'glide': {
+            // Jump to specific glide
+            if (analysis.glides && target.index < analysis.glides.length) {
+                const glide = analysis.glides[target.index];
+                const midPoint = Math.floor((glide.startIdx + glide.endIdx) / 2);
+                const midTime = points[midPoint].timeS - points[0].timeS;
+
+                seekReplay(midTime);
+
+                // Highlight on chart
+                if (appState.altitudeChart) {
+                    appState.altitudeChart.highlightSegment(glide.startIdx, glide.endIdx);
+                }
+            }
+            break;
+        }
+
+        case 'time': {
+            // Jump to specific time ratio
+            const totalDuration = points[points.length - 1].timeS - points[0].timeS;
+            const targetTime = totalDuration * target.ratio;
+
+            seekReplay(targetTime);
+
+            // Clear any chart highlights
+            if (appState.altitudeChart) {
+                appState.altitudeChart.clearSelection();
+            }
+            break;
+        }
+
+        case 'point': {
+            // Jump to specific point index
+            if (target.index < points.length) {
+                const targetTime = points[target.index].timeS - points[0].timeS;
+                seekReplay(targetTime);
+            }
+            break;
+        }
+    }
+}
+
+/**
+ * Navigate to previous walkthrough item
+ */
+function previousWalkthroughItem() {
+    if (appState.walkthrough.currentIndex > 0) {
+        appState.walkthrough.currentIndex--;
+        updateWalkthroughDisplay();
+    }
+}
+
+/**
+ * Navigate to next walkthrough item
+ */
+function nextWalkthroughItem() {
+    const { items, currentIndex } = appState.walkthrough;
+    if (currentIndex < items.length - 1) {
+        appState.walkthrough.currentIndex++;
+        updateWalkthroughDisplay();
+    }
+}
+
+/**
+ * Exit walkthrough mode
+ */
+function exitWalkthrough() {
+    appState.walkthrough.active = false;
+    appState.walkthrough.items = [];
+    appState.walkthrough.currentIndex = 0;
+
+    setVisible(DOM_IDS.walkthroughBar, false);
+}
+
+/**
+ * Setup walkthrough event listeners
+ */
+function setupWalkthroughListeners() {
+    // Start walkthrough button - needs to be attached after coaching HTML is rendered
+    // This will be handled dynamically after coaching tab is populated
+
+    // Navigation buttons
+    domCache.get(DOM_IDS.walkthroughPrevBtn).addEventListener('click', previousWalkthroughItem);
+    domCache.get(DOM_IDS.walkthroughNextBtn).addEventListener('click', nextWalkthroughItem);
+    domCache.get(DOM_IDS.walkthroughExitBtn).addEventListener('click', exitWalkthrough);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!appState.walkthrough.active) return;
+
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            previousWalkthroughItem();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextWalkthroughItem();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            exitWalkthrough();
+        }
+    });
+}
+
+/**
  * Clear current flight
  */
 function clearFlight() {
+    // Exit walkthrough if active
+    if (appState.walkthrough.active) {
+        exitWalkthrough();
+    }
+
     // Clear renderer
     if (appState.renderer) {
         appState.renderer.clear();
@@ -890,7 +1281,6 @@ function clearFlight() {
     // Reset UI
     domCache.get(DOM_IDS.fileInput).value = '';
     setVisible(DOM_IDS.loadedFile, false);
-    setVisible(DOM_IDS.coachingPanel, false);
     setVisible(DOM_IDS.legendPanel, false);
 
     // Switch back to Upload tab
@@ -898,6 +1288,10 @@ function clearFlight() {
 
     // Reset thermals list selection
     document.querySelectorAll(`.${CSS_CLASSES.thermalItem}`).forEach(t => t.classList.remove(CSS_CLASSES.active));
+
+    // Show empty states again
+    const chartEmptyState = document.getElementById('chartEmptyState');
+    if (chartEmptyState) chartEmptyState.style.display = 'flex';
 }
 
 /**
@@ -930,8 +1324,9 @@ function setupBottomBar() {
 
         // Resize altitude chart after collapse/expand
         setTimeout(() => {
-            if (appState.altitudeChart) {
+            if (appState.altitudeChart && appState.hasFlightData()) {
                 appState.altitudeChart.resizeCanvas();
+                appState.altitudeChart.draw();
             }
         }, APP_CONFIG.ui.chartResizeDelayMs);
     });
@@ -977,6 +1372,11 @@ function setupBottomBarResize() {
             isResizing = false;
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
+
+            // Redraw chart after resize completes
+            if (appState.altitudeChart && appState.hasFlightData()) {
+                appState.altitudeChart.draw();
+            }
         }
     });
 }
@@ -1002,6 +1402,14 @@ function switchToTab(tabName) {
     });
     const tabId = 'tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
     document.getElementById(tabId).classList.add('active');
+
+    // Resize altitude chart when switching to Chart tab
+    if (tabName === TABS.chart && appState.altitudeChart && appState.hasFlightData()) {
+        setTimeout(() => {
+            appState.altitudeChart.resizeCanvas();
+            appState.altitudeChart.draw();
+        }, 50);
+    }
 }
 
 /**

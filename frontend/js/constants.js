@@ -18,11 +18,9 @@ const DOM_IDS = {
     fileName: 'fileName',
 
     // Panels
-    coachingPanel: 'coachingPanel',
     legendPanel: 'legendPanel',
-    closeCoaching: 'closeCoaching',
-    coachingContent: 'coachingContent',
     coachingTabContent: 'coachingTabContent',
+    coachingBadge: 'coachingBadge',
 
     // Metrics - Flight Overview
     metricDuration: 'metricDuration',
@@ -37,7 +35,6 @@ const DOM_IDS = {
     // Metrics - Glide Analysis
     metricGlides: 'metricGlides',
     metricAvgGlideRatio: 'metricAvgGlideRatio',
-    metricTotalGlideDist: 'metricTotalGlideDist',
 
     // Metrics - Wind
     metricWindSpeed: 'metricWindSpeed',
@@ -58,7 +55,6 @@ const DOM_IDS = {
     // Metrics - Track & Speed
     metricTotalDistance: 'metricTotalDistance',
     metricStraightDistance: 'metricStraightDistance',
-    metricTrackEfficiency: 'metricTrackEfficiency',
     metricAvgSpeed: 'metricAvgSpeed',
     metricMaxSpeed: 'metricMaxSpeed',
 
@@ -74,7 +70,6 @@ const DOM_IDS = {
     metricTimeSearching: 'metricTimeSearching',
     metricAltClimbing: 'metricAltClimbing',
     metricAltGliding: 'metricAltGliding',
-    metricAltSearching: 'metricAltSearching',
 
     // Metrics - Personal Bests
     metricBestGlideRatio: 'metricBestGlideRatio',
@@ -112,7 +107,17 @@ const DOM_IDS = {
 
     // Bottom Bar Controls
     collapseBtn: 'collapseBtn',
-    resizeHandle: 'resizeHandle'
+    resizeHandle: 'resizeHandle',
+
+    // Walkthrough
+    walkthroughBar: 'walkthroughBar',
+    startWalkthroughBtn: 'startWalkthroughBtn',
+    walkthroughPrevBtn: 'walkthroughPrevBtn',
+    walkthroughNextBtn: 'walkthroughNextBtn',
+    walkthroughExitBtn: 'walkthroughExitBtn',
+    walkthroughProgress: 'walkthroughProgress',
+    walkthroughItemIcon: 'walkthroughItemIcon',
+    walkthroughItemText: 'walkthroughItemText'
 };
 
 // CSS Class Names
