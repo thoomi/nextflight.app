@@ -4,8 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "resend": "^6.4.0",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {}
+    "resend": "^6.10.0",
+    "zod": "^4.3.6"
+  }
 }

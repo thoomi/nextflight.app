@@ -11,7 +11,7 @@ const envConfig = (() => {
 
   const parsed = schema.safeParse(process.env);
   if (!parsed.success) {
-    const message = parsed.error.errors.map((error) => error.message).join('; ');
+    const message = parsed.error.issues.map((issue) => issue.message).join('; ');
     throw new Error(`Subscribe handler misconfigured: ${message}`);
   }
 
