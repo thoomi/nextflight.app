@@ -4,14 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NextFlight — Learn from your flights. Fly the next one better.</title>
-    <meta name="description" content="Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight." />
+    <meta name="description" content="Load your track in the browser and get a concise debrief: what went well, what to improve, and one clear action for your next flight. Runs fully local — no upload." />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0f172a" />
     <link rel="canonical" href="https://nextflightbetter.app/" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="NextFlight" />
-    <meta property="og:description" content="Upload your track and get a concise debrief for your next flight." />
+    <meta property="og:description" content="Load your track in the browser and get a concise debrief for your next flight. Fully local — no upload." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://nextflightbetter.app" />
     <meta property="og:site_name" content="NextFlight" />
@@ -25,7 +25,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="NextFlight" />
-    <meta name="twitter:description" content="Upload your track and get a concise debrief for your next flight." />
+    <meta name="twitter:description" content="Load your track in the browser and get a concise debrief for your next flight. Fully local — no upload." />
     <meta name="twitter:image" content="https://nextflightbetter.app/assets/og.png" />
     <meta name="twitter:image:alt" content="NextFlight — Learn from your flights. Fly the next one better." />
 
@@ -39,7 +39,7 @@
         "@type": "WebSite",
         "url": "https://nextflightbetter.app/",
         "name": "NextFlight",
-        "description": "Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight.",
+        "description": "Load your track in the browser and get a concise debrief: what went well, what to improve, and one clear action for your next flight. Runs fully local — no upload.",
         "publisher": {
           "@type": "Organization",
           "name": "NextFlight",
@@ -49,8 +49,8 @@
           }
         },
         "potentialAction": {
-          "@type": "SubscribeAction",
-          "target": "https://nextflightbetter.app/#cta"
+          "@type": "UseAction",
+          "target": "https://nextflightbetter.app/app.html"
         }
       }
     </script>
@@ -71,8 +71,7 @@
         <a href="#how" class="hover:text-slate-900">How it works</a>
         <a href="#privacy" class="hover:text-slate-900">Privacy</a>
         <a href="concept.html" class="hover:text-slate-900">Concept</a>
-        <a href="app.html" class="hover:text-slate-900">Try app</a>
-        <a href="#cta" class="px-4 py-2 rounded-2xl bg-slate-900 text-white shadow hover:shadow-md">Get early access</a>
+        <a href="app.html" class="px-4 py-2 rounded-2xl bg-slate-900 text-white shadow hover:shadow-md">Open app</a>
       </nav>
 
       <!-- Mobile Menu Button -->
@@ -90,8 +89,7 @@
         <a href="#how" class="py-2 hover:text-slate-900">How it works</a>
         <a href="#privacy" class="py-2 hover:text-slate-900">Privacy</a>
         <a href="concept.html" class="py-2 hover:text-slate-900">Concept</a>
-        <a href="app.html" class="py-2 hover:text-slate-900">Try app</a>
-        <a href="#cta" class="py-2 px-4 text-center rounded-2xl bg-slate-900 text-white shadow">Get early access</a>
+        <a href="app.html" class="py-2 px-4 text-center rounded-2xl bg-slate-900 text-white shadow">Open app</a>
       </div>
     </nav>
 
@@ -103,17 +101,15 @@
             Learn from your flights.<br />
             <span class="text-orange-500">Fly the next one better.</span>
           </h1>
-          <p class="mt-5 text-lg text-slate-600 animate-fade-in animate-delay-100">Upload your track and get a concise debrief: what went well, what to improve, and one clear action for your next flight.</p>
+          <p class="mt-5 text-lg text-slate-600 animate-fade-in animate-delay-100">Drop your track into the browser and get a concise debrief: what went well, what to improve, and one clear action for your next flight. Fully local — your data stays on your device.</p>
 
-          <!-- Email capture -->
+          <!-- Primary CTA -->
           <div id="cta" class="mt-7 animate-fade-in animate-delay-150">
-            <form id="early-access-form" class="flex flex-col sm:flex-row gap-3" method="post" novalidate>
-              <label for="email" class="sr-only">Email address</label>
-              <input id="email" name="email" type="email" required placeholder="you@pilot.email" class="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              <button type="submit" class="rounded-2xl bg-slate-900 px-5 py-3 text-white shadow hover:shadow-md">Request early access</button>
-            </form>
-            <p id="form-help" class="mt-2 text-xs text-slate-500">No spam. We’ll only email you about the beta.</p>
-            <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <a href="app.html" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-white shadow hover:shadow-md">Open the app</a>
+              <a href="concept.html" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 shadow-sm hover:shadow">See the concept</a>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Free and open. Drop an IGC/GPX track and get your debrief.</p>
           </div>
 
           <!-- Trust bullets -->
@@ -171,7 +167,7 @@
     <section id="features" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">Why NextFlight</h2>
       <div class="mt-6 grid md:grid-cols-3 gap-5">
-        <div class="card"><div class="text-sm font-medium text-slate-900">Instant, simple debrief</div><div class="text-sm text-slate-600 mt-1">Upload IGC/GPX → get a plain‑language summary in seconds.</div></div>
+        <div class="card"><div class="text-sm font-medium text-slate-900">Instant, simple debrief</div><div class="text-sm text-slate-600 mt-1">Drop IGC/GPX → get a plain‑language summary in seconds, right in your browser.</div></div>
         <div class="card"><div class="text-sm font-medium text-slate-900">Actionable next step</div><div class="text-sm text-slate-600 mt-1">Always one clear improvement for your next flight.</div></div>
         <div class="card"><div class="text-sm font-medium text-slate-900">Beginner‑first, with depth</div><div class="text-sm text-slate-600 mt-1">Clean defaults now; deeper analytics later when you want them.</div></div>
       </div>
@@ -181,7 +177,7 @@
     <section id="how" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">How it works</h2>
       <ol class="mt-6 grid md:grid-cols-3 gap-5 list-decimal list-inside">
-        <li class="card"><div class="text-sm font-medium text-slate-900">Upload your track</div><div class="text-sm text-slate-600 mt-1">IGC / GPX from XCTrack, Flyskyhy, etc.</div></li>
+        <li class="card"><div class="text-sm font-medium text-slate-900">Drop your track</div><div class="text-sm text-slate-600 mt-1">IGC / GPX from XCTrack, Flyskyhy, etc. — stays on your device.</div></li>
         <li class="card"><div class="text-sm font-medium text-slate-900">Auto‑analyze</div><div class="text-sm text-slate-600 mt-1">Detect thermals, early exits, and centering tips.</div></li>
         <li class="card"><div class="text-sm font-medium text-slate-900">Get your takeaway</div><div class="text-sm text-slate-600 mt-1">One actionable step for your next flight.</div></li>
       </ol>
@@ -191,7 +187,7 @@
     <section id="privacy" class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
       <h2 class="text-2xl sm:text-3xl font-semibold text-slate-900">Privacy first</h2>
       <div class="mt-4 card">
-        <p class="text-sm text-slate-600">You own your data. We keep uploads private by default and delete them on request.</p>
+        <p class="text-sm text-slate-600">Your tracks never leave your device. Everything runs locally in your browser — no upload, no account, no server-side storage.</p>
       </div>
     </section>
 
