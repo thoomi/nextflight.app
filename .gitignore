@@ -53,3 +53,7 @@ share/python-wheels/
 .coverage
 .vscode/
 .ruff_cache/
+
+# Playwright
+test-results/
+playwright-report/

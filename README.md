@@ -8,7 +8,7 @@ AI-powered flight debrief tool for paragliding pilots. Turn every flight into a 
 
 ### Frontend (Landing Page)
 
-The landing page is a static site that can be served directly.
+The frontend is a static site that can be served directly. It includes the landing page, the analyzer app, and the Flight Art editor.
 
 ```bash
 # Install Node.js dependencies
@@ -23,6 +23,29 @@ open frontend/index.html
 
 Forward Dev Port on windows to access WSL2 from e.g. your phone:
 `netsh interface portproxy add v4tov4 listenport=8000 listenaddress=0.0.0.0 connectport=8000 connectaddress=172.31.82.34`
+
+### Frontend Rendering Tests
+
+Playwright is configured for browser-level smoke tests with Chromium. Use these when changing frontend UI, canvas rendering, or Flight Art behavior.
+
+```bash
+# Run headless Chromium tests
+npm run test:e2e
+
+# Run with a visible browser
+npm run test:e2e:headed
+
+# Open the Playwright test UI
+npm run test:e2e:ui
+```
+
+The Playwright config starts a local static server automatically:
+
+```bash
+python3 -m http.server 8765 --directory frontend
+```
+
+In sandboxed development sessions this local port bind may require approval/escalation. The current smoke test covers `/art.html`, sample loading, canvas visibility/sizing, and title/subtitle toggle behavior.
 
 ### Backend (Python Analysis Tool)
 
