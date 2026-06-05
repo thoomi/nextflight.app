@@ -6,6 +6,7 @@ const frontend = path.join(root, 'frontend');
 const dist = path.join(root, 'dist');
 
 copyDirectory(path.join(frontend, 'assets'), path.join(dist, 'assets'));
+copyDirectory(path.join(frontend, 'css'), path.join(dist, 'css'));
 copyDirectory(path.join(frontend, 'js'), path.join(dist, 'js'));
 copyDirectory(path.join(frontend, 'samples'), path.join(dist, 'samples'));
 
