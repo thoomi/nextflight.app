@@ -6,9 +6,9 @@ AI-powered flight debrief tool for paragliding pilots. Turn every flight into a 
 
 ## Development Setup
 
-### Frontend (Landing Page)
+### Frontend
 
-The frontend is a static site that can be served directly. It includes the landing page, the analyzer app, and the Flight Art editor.
+This is a static frontend app that can be served directly. It includes the landing page, the analyzer app, and the Flight Art editor.
 
 ```bash
 # Install Node.js dependencies
@@ -47,56 +47,6 @@ python3 -m http.server 8765 --directory frontend
 
 In sandboxed development sessions this local port bind may require approval/escalation. The current smoke test covers `/art.html`, sample loading, canvas visibility/sizing, and title/subtitle toggle behavior.
 
-### Backend (Python Analysis Tool)
-
-See [backend/README.md](backend/README.md) for detailed setup instructions.
-
-```bash
-cd backend
-
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install Python 3.14
-uv python install 3.14
-
-# Create virtual environment
-uv venv --python 3.14 .venv
-
-# Activate virtual environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-uv pip install -e .
-
-# Run analysis on sample file
-python core/flight_debrief.py test/schauinsland_long_flight_many_thermals.igc
-```
-
-### API (Serverless Functions)
-
-The API uses Vercel serverless functions for email subscriptions.
-
-1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Configure environment variables:
-   - `RESEND_API_KEY`: Get from [resend.com/api-keys](https://resend.com/api-keys)
-   - `NOTIFICATION_EMAIL`: Your email to receive signup notifications
-   - `FROM_EMAIL`: Verified sender in Resend (or `onboarding@resend.dev` for testing)
-   - `RESEND_AUDIENCE_ID`: Create an audience at [resend.com/audiences](https://resend.com/audiences) and copy its ID
-
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-4. Test locally with Vercel CLI:
-   ```bash
-   npx vercel dev
-   ```
 
 ## Deployment
 
@@ -112,12 +62,6 @@ The project automatically deploys to Vercel when you push to the `main` branch.
    - Click "New repository secret"
    - Name: `VERCEL_TOKEN`
    - Value: Your Vercel token
-3. Set environment variables in Vercel dashboard for the API:
-   - `RESEND_API_KEY`
-   - `NOTIFICATION_EMAIL`
-   - `FROM_EMAIL`
-   - `RESEND_AUDIENCE_ID`
-
 **That's it!** Every push to `main` will automatically deploy to production.
 
 ### Manual Deployment (CLI)
@@ -134,7 +78,6 @@ vercel --prod
 
 The `vercel.json` configuration automatically:
 - Serves static files from `frontend/`
-- Routes API requests to `api/` serverless functions
 - Enables clean URLs and proper caching
 
 ## Contributing

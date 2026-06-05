@@ -4,15 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "prepare": "husky",
+    "check:syntax": "node --check frontend/js/igc-parser.js && node --check frontend/js/flight-analyzer.js && node --check frontend/js/app.js && node --check frontend/js/art-page.js && node --check frontend/js/art-renderer.js",
+    "precommit": "lint-staged",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui"
   },
-  "dependencies": {
-    "resend": "^6.10.0",
-    "zod": "^4.3.6"
+  "lint-staged": {
+    "frontend/js/**/*.js": "node --check"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0"
+    "@playwright/test": "^1.60.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7"
   }
 }

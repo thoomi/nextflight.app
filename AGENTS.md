@@ -12,10 +12,9 @@ Concise technical context for continuing development in this repo.
 - Shared browser globals:
   - `frontend/js/igc-parser.js` exposes `parseTrackFile(...)`.
   - `frontend/js/flight-analyzer.js` exposes `analyze(...)`.
-- Backend analysis code exists under `backend/`, but Flight Art currently uses only browser-side JS.
 - Deployment output directory is `frontend` via `vercel.json`.
 
-There is no frontend build step. Pages use direct `<script>` tags and global functions.
+This is a static frontend-only app with no build step. Pages use direct `<script>` tags and global functions.
 
 ## Flight Art Implementation Notes
 

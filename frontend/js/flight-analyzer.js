@@ -1,6 +1,6 @@
 /**
  * Flight Analyzer
- * Ported from Python backend - analyzes paragliding flight tracks
+ * Browser-side paragliding flight track analysis
  */
 
 // Configuration Constants
@@ -1079,7 +1079,7 @@ function analyze(points) {
 
 /**
  * Generate coaching feedback based on analysis
- * Matches the sophisticated logic from Python backend implementation
+ * Generates coaching sections from the browser-side flight summary
  * @param {FlightSummary} summary - Flight analysis summary
  * @returns {Object} - Coaching feedback sections with arrays for extensibility
  */
