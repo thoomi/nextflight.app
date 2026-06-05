@@ -1206,15 +1206,6 @@ function generateCoaching(summary) {
     return coaching;
 }
 
-// Export functions
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        analyze,
-        generateCoaching,
-        CONFIG
-    };
-}
-
 export {
     analyze,
     generateCoaching,

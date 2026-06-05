@@ -2,12 +2,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const roots = ['frontend/js', 'tests'];
+const roots = ['frontend/js', 'scripts', 'tests'];
 const scriptExtensions = new Set(['.cjs', '.js', '.mjs']);
-
-const files = roots
-  .flatMap((root) => listScriptFiles(root))
-  .sort((left, right) => left.localeCompare(right));
+const files = [
+  'playwright.config.js',
+  'vite.config.js',
+  ...roots.flatMap((root) => listScriptFiles(root)),
+].sort((left, right) => left.localeCompare(right));
 
 if (files.length === 0) {
   console.error(`No JavaScript files found under ${roots.join(', ')}`);

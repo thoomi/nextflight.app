@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
+    "build": "vite build && node scripts/copy-static-assets.cjs",
     "check:syntax": "node tests/smoke/check-syntax.cjs",
+    "dev": "vite",
+    "preview": "vite preview",
     "test:smoke": "node tests/smoke/analyzer-smoke.cjs",
     "precommit": "lint-staged",
     "test:e2e": "playwright test",
@@ -18,6 +21,7 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.7"
+    "lint-staged": "^17.0.7",
+    "vite": "^8.0.16"
   }
 }

@@ -235,16 +235,6 @@ function parseTrackFile(content, filename) {
     }
 }
 
-// Export functions
-if (typeof module !== 'undefined' && module.exports) {
-    // Node.js environment
-    module.exports = {
-        parseIGC,
-        parseGPX,
-        parseTrackFile
-    };
-}
-
 export {
     parseIGC,
     parseGPX,

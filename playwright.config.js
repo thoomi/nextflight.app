@@ -10,7 +10,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'python3 -m http.server 8765 --directory frontend',
+    command: 'npm run dev -- --host 127.0.0.1 --port 8765',
     url: 'http://127.0.0.1:8765',
     reuseExistingServer: !process.env.CI,
     timeout: 10000,
