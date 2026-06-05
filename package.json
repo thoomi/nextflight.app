@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "check:syntax": "node --check frontend/js/igc-parser.js && node --check frontend/js/flight-analyzer.js && node --check frontend/js/app.js && node --check frontend/js/art-page.js && node --check frontend/js/art-renderer.js",
+    "check:syntax": "node tests/smoke/check-syntax.cjs",
+    "test:smoke": "node tests/smoke/analyzer-smoke.cjs",
     "precommit": "lint-staged",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
