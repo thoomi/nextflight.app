@@ -59,50 +59,14 @@ async function loadSampleTrack() {
         const sampleUrl = APP_CONFIG.dev.samplePath;
         console.log(`${LOG_PREFIX.dev} Auto-loading sample track:`, sampleUrl);
 
-        const response = await fetch(sampleUrl);
-        if (!response.ok) throw new Error('Failed to fetch sample');
+        const loadedTrack = await loadAnalyzerSampleTrack(sampleUrl);
+        console.log(`Parsed ${loadedTrack.points.length} track points`);
+        console.log('Flight analysis complete:', loadedTrack.analysis);
 
-        const content = await response.text();
-        const fileName = sampleUrl.split('/').pop();
-
-        // Parse and analyze
-        const points = parseTrackFile(content, fileName);
-        console.log(`Parsed ${points.length} track points`);
-
-        const analysis = analyze(points);
-        console.log('Flight analysis complete:', analysis);
-
-        appState.setCurrentAnalysis(analysis);
-
-        // Render (automatically flies to track after rendering)
-        await appState.renderer.render(analysis);
-
-        // Show UI
-        setVisible(DOM_IDS.uploadStatus, false);
-        setVisible(DOM_IDS.loadedFile, true);
-        domCache.get(DOM_IDS.fileName).textContent = fileName + ' (auto-loaded)';
-
-        // Show floating panels
-        setVisible(DOM_IDS.legendPanel, true);
-
-        // Switch to Chart tab after loading
-        switchToTab(TABS.chart);
-
-        // Ensure bottom bar is expanded
-        domCache.get(DOM_IDS.bottomBar).classList.remove(CSS_CLASSES.collapsed);
-
-        updateMetricsPanel(analysis);
-        updateCoachingPanel(analysis);
-
-        // Hide empty states when data is loaded
-        const chartEmptyState = document.getElementById('chartEmptyState');
-        if (chartEmptyState) chartEmptyState.style.display = 'none';
-        initializeReplay(analysis);
-
-        setTimeout(() => {
-            appState.altitudeChart.resizeCanvas();
-            appState.altitudeChart.setData(analysis);
-        }, APP_CONFIG.ui.chartInitDelayMs);
+        await showLoadedAnalysis({
+            analysis: loadedTrack.analysis,
+            displayName: `${loadedTrack.fileName} (auto-loaded)`
+        });
 
         console.log(`${LOG_PREFIX.dev} ${SUCCESS_MESSAGES.sampleLoaded}`);
     } catch (error) {
@@ -167,51 +131,14 @@ async function handleFileUpload(file) {
         setVisible(DOM_IDS.uploadStatus, true);
         setVisible(DOM_IDS.loadedFile, false);
 
-        // Read file content
-        const content = await readFileContent(file);
+        const loadedTrack = await loadAnalyzerUploadedFile(file);
+        console.log(`Parsed ${loadedTrack.points.length} track points`);
+        console.log('Flight analysis complete:', loadedTrack.analysis);
 
-        // Parse the file
-        const points = parseTrackFile(content, file.name);
-        console.log(`Parsed ${points.length} track points`);
-
-        // Analyze the flight
-        const analysis = analyze(points);
-        console.log('Flight analysis complete:', analysis);
-
-        // Store current analysis
-        appState.setCurrentAnalysis(analysis);
-
-        // Render visualization (async - waits for terrain sampling)
-        await appState.renderer.render(analysis);
-
-        // Hide loading, show file info
-        setVisible(DOM_IDS.uploadStatus, false);
-        setVisible(DOM_IDS.loadedFile, true);
-        domCache.get(DOM_IDS.fileName).textContent = file.name;
-
-        // Show floating panels
-        setVisible(DOM_IDS.legendPanel, true);
-
-        // Switch to Chart tab after loading
-        switchToTab(TABS.chart);
-
-        // Ensure bottom bar is expanded
-        domCache.get(DOM_IDS.bottomBar).classList.remove(CSS_CLASSES.collapsed);
-
-        // Update UI after panels are visible
-        updateMetricsPanel(analysis);
-        updateCoachingPanel(analysis);
-
-        // Hide empty states when data is loaded
-        const chartEmptyState = document.getElementById('chartEmptyState');
-        if (chartEmptyState) chartEmptyState.style.display = 'none';
-        initializeReplay(analysis);
-
-        // Update altitude chart (after panel is visible so canvas has dimensions)
-        setTimeout(() => {
-            appState.altitudeChart.resizeCanvas();
-            appState.altitudeChart.setData(analysis);
-        }, APP_CONFIG.ui.chartInitDelayMs);
+        await showLoadedAnalysis({
+            analysis: loadedTrack.analysis,
+            displayName: loadedTrack.fileName
+        });
 
     } catch (error) {
         console.error('Error processing file:', error);
@@ -221,17 +148,45 @@ async function handleFileUpload(file) {
 }
 
 /**
- * Read file content as text
- * @param {File} file - File to read
- * @returns {Promise<string>} - File content
+ * Render loaded analysis and reveal analyzer UI.
+ * @param {Object} loaded - Loaded analysis data
+ * @param {Object} loaded.analysis - Flight analysis data
+ * @param {string} loaded.displayName - Display name for loaded file
  */
-function readFileContent(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target.result);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(file);
-    });
+async function showLoadedAnalysis({ analysis, displayName }) {
+    appState.setCurrentAnalysis(analysis);
+
+    // Render visualization (async - waits for terrain sampling)
+    await appState.renderer.render(analysis);
+
+    // Hide loading, show file info
+    setVisible(DOM_IDS.uploadStatus, false);
+    setVisible(DOM_IDS.loadedFile, true);
+    domCache.get(DOM_IDS.fileName).textContent = displayName;
+
+    // Show floating panels
+    setVisible(DOM_IDS.legendPanel, true);
+
+    // Switch to Chart tab after loading
+    switchToTab(TABS.chart);
+
+    // Ensure bottom bar is expanded
+    domCache.get(DOM_IDS.bottomBar).classList.remove(CSS_CLASSES.collapsed);
+
+    // Update UI after panels are visible
+    updateMetricsPanel(analysis);
+    updateCoachingPanel(analysis);
+
+    // Hide empty states when data is loaded
+    const chartEmptyState = document.getElementById('chartEmptyState');
+    if (chartEmptyState) chartEmptyState.style.display = 'none';
+    initializeReplay(analysis);
+
+    // Update altitude chart (after panel is visible so canvas has dimensions)
+    setTimeout(() => {
+        appState.altitudeChart.resizeCanvas();
+        appState.altitudeChart.setData(analysis);
+    }, APP_CONFIG.ui.chartInitDelayMs);
 }
 
 /**
@@ -239,101 +194,20 @@ function readFileContent(file) {
  * @param {Object} analysis - Flight analysis data
  */
 function updateMetricsPanel(analysis) {
-    // Flight Overview
-    domCache.get(DOM_IDS.metricDuration).textContent = formatTime(analysis.durationTotal);
-    domCache.get(DOM_IDS.metricMaxAlt).textContent = analysis.maxAlt ? formatAltitude(analysis.maxAlt) : '-';
-    domCache.get(DOM_IDS.metricThermals).textContent = analysis.segments.length;
-    domCache.get(DOM_IDS.metricFirstLift).textContent = analysis.timeToFirstThermal ? formatTime(analysis.timeToFirstThermal) : '-';
-
-    // Thermal Performance
-    domCache.get(DOM_IDS.metricTotalThermalTime).textContent = formatTime(analysis.totalThermalTime);
-    domCache.get(DOM_IDS.metricAvgThermalDuration).textContent = formatTime(analysis.avgThermalDuration);
-    domCache.get(DOM_IDS.metricAltGained).textContent = formatAltitude(analysis.totalAltitudeGained);
-
-    if (analysis.best) {
-        domCache.get(DOM_IDS.metricBestClimb).textContent = formatVario(analysis.best.maxClimb);
-        domCache.get(DOM_IDS.metricBestAvgClimb).textContent = formatVario(analysis.best.avgClimb);
-        // Centering quality based on standard deviation
-        const quality = analysis.best.centeringStd < 0.4 ? 'Excellent' :
-                       analysis.best.centeringStd < 0.6 ? 'Good' :
-                       analysis.best.centeringStd < 0.8 ? 'Fair' : 'Needs Work';
-        domCache.get(DOM_IDS.metricCenteringQuality).textContent = quality;
-    } else {
-        domCache.get(DOM_IDS.metricBestClimb).textContent = '-';
-        domCache.get(DOM_IDS.metricBestAvgClimb).textContent = '-';
-        domCache.get(DOM_IDS.metricCenteringQuality).textContent = '-';
-    }
-
-    // Thermaling Technique
-    if (analysis.thermalDirectionPreference) {
-        const pref = analysis.thermalDirectionPreference;
-        const prefText = `${Math.round(pref.right)}% R / ${Math.round(pref.left)}% L`;
-        domCache.get(DOM_IDS.metricThermalDirection).textContent = prefText;
-    } else {
-        domCache.get(DOM_IDS.metricThermalDirection).textContent = '-';
-    }
-    domCache.get(DOM_IDS.metricAvgTurnRate).textContent = formatTurnRate(analysis.avgThermalTurnRate);
-
-    // Glide Analysis
-    domCache.get(DOM_IDS.metricGlides).textContent = analysis.glideCount || 0;
-    domCache.get(DOM_IDS.metricAvgGlideRatio).textContent = analysis.avgGlideRatio ? formatGlideRatio(analysis.avgGlideRatio) : '-';
-    domCache.get(DOM_IDS.metricBestGlideRatio).textContent = analysis.bestGlideRatio ? formatGlideRatio(analysis.bestGlideRatio) : '-';
-
-    // Track & Speed
-    domCache.get(DOM_IDS.metricTotalDistance).textContent = formatDistance(analysis.totalTrackDistance);
-    domCache.get(DOM_IDS.metricStraightDistance).textContent = formatDistance(analysis.straightLineDistance);
-    domCache.get(DOM_IDS.metricAvgSpeed).textContent = formatSpeed(analysis.avgGroundSpeed);
-    domCache.get(DOM_IDS.metricMaxSpeed).textContent = formatSpeed(analysis.maxGroundSpeed);
-
-    // Altitude Stats
-    domCache.get(DOM_IDS.metricMinAlt).textContent = formatAltitude(analysis.minAlt);
-    domCache.get(DOM_IDS.metricAvgAlt).textContent = formatAltitude(analysis.avgAlt);
-    domCache.get(DOM_IDS.metricAltRange).textContent = formatAltitude(analysis.altitudeRange);
-    const lowAltText = analysis.lowAltitudeWarnings > 0 ? `${analysis.lowAltitudeWarnings} ⚠️` : '0';
-    domCache.get(DOM_IDS.metricLowAltWarnings).textContent = lowAltText;
-
-    // Flight Phases Breakdown
-    const totalTime = analysis.durationTotal;
-    const climbPct = totalTime > 0 ? ` (${Math.round((analysis.timeClimbing / totalTime) * 100)}%)` : '';
-    const glidePct = totalTime > 0 ? ` (${Math.round((analysis.timeGliding / totalTime) * 100)}%)` : '';
-    const searchPct = totalTime > 0 ? ` (${Math.round((analysis.timeSearching / totalTime) * 100)}%)` : '';
-
-    domCache.get(DOM_IDS.metricTimeClimbing).textContent = formatTime(analysis.timeClimbing) + climbPct;
-    domCache.get(DOM_IDS.metricTimeGliding).textContent = formatTime(analysis.timeGliding) + glidePct;
-    domCache.get(DOM_IDS.metricTimeSearching).textContent = formatTime(analysis.timeSearching) + searchPct;
-    domCache.get(DOM_IDS.metricAltClimbing).textContent = '+' + formatAltitude(analysis.altGainedClimbing);
-    domCache.get(DOM_IDS.metricAltGliding).textContent = '-' + formatAltitude(analysis.altLostGliding);
-
-    // Personal Bests
-    if (analysis.longestThermal) {
-        domCache.get(DOM_IDS.metricLongestThermal).textContent = formatTime(analysis.longestThermal.durationS);
-    } else {
-        domCache.get(DOM_IDS.metricLongestThermal).textContent = '-';
-    }
-    if (analysis.longestGlide) {
-        domCache.get(DOM_IDS.metricLongestGlide).textContent = formatDistance(analysis.longestGlide.straightDistance);
-    } else {
-        domCache.get(DOM_IDS.metricLongestGlide).textContent = '-';
-    }
-
-    // Wind Conditions
-    if (analysis.wind && analysis.wind.confidence > 0.3) {
-        domCache.get(DOM_IDS.metricWindSpeed).textContent = `${Math.round(analysis.wind.speed)} km/h`;
-        domCache.get(DOM_IDS.metricWindDir).textContent = `${analysis.wind.directionCompass} (${Math.round(analysis.wind.confidence * 100)}%)`;
-    } else {
-        domCache.get(DOM_IDS.metricWindSpeed).textContent = '-';
-        domCache.get(DOM_IDS.metricWindDir).textContent = '-';
-    }
-
-    // Speedbar Analysis
-    domCache.get(DOM_IDS.metricSpeedbarOps).textContent = analysis.speedbarOpportunityCount || 0;
-    domCache.get(DOM_IDS.metricSpeedbarWorthwhile).textContent = analysis.worthwhileSpeedbarCount || 0;
-    domCache.get(DOM_IDS.metricSpeedbarTimeSavings).textContent = formatTime(analysis.totalTimeSavings || 0);
-    domCache.get(DOM_IDS.metricSpeedbarAltCost).textContent = formatAltitude(analysis.totalAltCost || 0);
-
-    // Data Quality
-    const gpsGapsText = analysis.gpsGaps > 0 ? `${analysis.gpsGaps} ⚠️` : '0';
-    domCache.get(DOM_IDS.metricGpsGaps).textContent = gpsGapsText;
+    renderMetricsPanel({
+        analysis,
+        domCache,
+        ids: DOM_IDS,
+        formatters: {
+            formatAltitude,
+            formatDistance,
+            formatGlideRatio,
+            formatSpeed,
+            formatTime,
+            formatTurnRate,
+            formatVario
+        }
+    });
 
     // Update detail tabs
     updateThermalsList(analysis.segments);
@@ -345,59 +219,20 @@ function updateMetricsPanel(analysis) {
  * @param {Array<ThermalSegment>} thermals - Array of thermal segments
  */
 function updateThermalsList(thermals) {
-    const container = domCache.get(DOM_IDS.thermalsContainer);
-    container.innerHTML = '';
-
-    if (thermals.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <p class="empty-state-title">No Thermals Detected</p>
-                <p class="empty-state-text">This flight didn't have any detected thermal segments</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Add "Clear selection" option at the top
-    const clearItem = document.createElement('div');
-    clearItem.className = `${CSS_CLASSES.thermalItem} text-center`;
-    clearItem.id = 'clearThermalSelection';
-    clearItem.innerHTML = '<div class="text-xs text-slate-500 italic">No thermal selected</div>';
-    clearItem.addEventListener('click', clearThermalSelection);
-    container.appendChild(clearItem);
-
-    thermals.forEach((thermal, index) => {
-        const item = document.createElement('div');
-        item.className = CSS_CLASSES.thermalItem;
-        item.dataset.thermalIndex = index;
-        item.innerHTML = `
-            <div class="flex items-center justify-between mb-1">
-                <div class="text-xs font-medium text-slate-900">Thermal ${index + 1}</div>
-                <div class="text-xs ${thermal.earlyExit ? 'text-orange-500' : 'text-green-600'}">
-                    ${thermal.earlyExit ? '⚠️ Early Exit' : '✓'}
-                </div>
-            </div>
-            <div class="text-xs text-slate-600">
-                <div class="${CSS_CLASSES.climbPositive}">${formatVario(thermal.maxClimb)} peak</div>
-                <div class="text-slate-500">
-                    Avg: ${formatVario(thermal.avgClimb)} • ${thermal.circles.toFixed(1)} circles
-                </div>
-            </div>
-        `;
-
-        item.addEventListener('mouseenter', () => highlightThermalTrack(index));
-        item.addEventListener('mouseleave', () => {
+    renderThermalsList({
+        thermals,
+        container: domCache.get(DOM_IDS.thermalsContainer),
+        cssClasses: CSS_CLASSES,
+        formatters: { formatVario },
+        onClearSelection: clearThermalSelection,
+        onMouseEnter: highlightThermalTrack,
+        onMouseLeave: () => {
             appState.hasThermalSelected() ? highlightThermalTrack(appState.selectedThermalIndex) : unhighlightThermalTrack();
-        });
-        item.addEventListener('click', () => {
+        },
+        onSelect: (thermal, index) => {
             selectThermal(index);
             flyToThermal(thermal);
-        });
-
-        container.appendChild(item);
+        }
     });
 }
 
@@ -484,106 +319,20 @@ function flyToThermal(thermal) {
  * @param {Array<GlideSegment>} glides - Array of glide segments
  */
 function updateGlidesList(glides) {
-    const container = domCache.get(DOM_IDS.glidesContainer);
-    container.innerHTML = '';
-
-    if (glides.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-9 5 9M5 21h14"/>
-                </svg>
-                <p class="empty-state-title">No Glides Detected</p>
-                <p class="empty-state-text">This flight didn't have any detected glide segments</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Add "Clear selection" option at the top
-    const clearItem = document.createElement('div');
-    clearItem.className = `${CSS_CLASSES.thermalItem} text-center`;
-    clearItem.id = 'clearGlideSelection';
-    clearItem.innerHTML = '<div class="text-xs text-slate-500 italic">No glide selected</div>';
-    clearItem.addEventListener('click', clearGlideSelection);
-    container.appendChild(clearItem);
-
-    glides.forEach((glide, index) => {
-        const item = document.createElement('div');
-        item.className = CSS_CLASSES.thermalItem;
-        item.dataset.glideIndex = index;
-
-        // Determine color and icon based on glide type
-        let typeColor, typeIcon, typeLabel, backgroundColor;
-
-        if (glide.speedbarOpportunity && glide.speedbarWorthwhile) {
-            typeColor = 'text-orange-600';
-            backgroundColor = 'bg-orange-50';
-            typeIcon = '⚡';
-            typeLabel = 'Speedbar';
-        } else if (glide.speedbarOpportunity) {
-            typeColor = 'text-yellow-600';
-            backgroundColor = 'bg-yellow-50';
-            typeIcon = '⚡';
-            typeLabel = 'Minor Speedbar';
-        } else if (glide.glideType === 'soaring') {
-            typeColor = 'text-green-600';
-            backgroundColor = 'bg-green-50';
-            typeIcon = '🪂';
-            typeLabel = 'Ridge Soaring';
-        } else if (glide.glideType === 'searching') {
-            typeColor = 'text-purple-600';
-            backgroundColor = 'bg-purple-50';
-            typeIcon = '🔍';
-            typeLabel = 'Searching';
-        } else if (glide.glideRatio && glide.glideRatio < 6) {
-            typeColor = 'text-red-600';
-            backgroundColor = 'bg-red-50';
-            typeIcon = '⚠️';
-            typeLabel = 'Poor Glide';
-        } else {
-            typeColor = 'text-slate-700';
-            backgroundColor = 'bg-slate-100';
-            typeIcon = '✈️';
-            typeLabel = 'Normal';
-        }
-
-        // Format speedbar reasons if present
-        let reasonsHtml = '';
-        if (glide.speedbarReasons && glide.speedbarReasons.length > 0) {
-            reasonsHtml = `<div class="text-xs text-slate-500 mt-1">${glide.speedbarReasons.join(', ')}</div>`;
-        }
-
-        item.className += ` ${backgroundColor}`;
-        item.innerHTML = `
-            <div class="flex items-center justify-between mb-1">
-                <div class="text-xs font-medium text-slate-900">Glide ${index + 1}</div>
-                <div class="text-xs ${typeColor}">
-                    ${typeIcon} ${typeLabel}
-                </div>
-            </div>
-            <div class="text-xs text-slate-600">
-                <div>
-                    ${glide.direction} • ${(glide.straightDistance / 1000).toFixed(2)} km
-                    ${glide.glideRatio ? ` • ${glide.glideRatio.toFixed(1)}:1` : ''}
-                </div>
-                <div class="text-slate-500">
-                    ${formatVario(glide.avgVario)} • ${formatTime(glide.durationS)}
-                </div>
-                ${reasonsHtml}
-            </div>
-        `;
-
-        item.addEventListener('mouseenter', () => highlightGlideTrack(index));
-        item.addEventListener('mouseleave', () => {
+    renderGlidesList({
+        glides,
+        container: domCache.get(DOM_IDS.glidesContainer),
+        cssClasses: CSS_CLASSES,
+        formatters: { formatTime, formatVario },
+        onClearSelection: clearGlideSelection,
+        onMouseEnter: highlightGlideTrack,
+        onMouseLeave: () => {
             appState.selectedGlideIndex !== null ? highlightGlideTrack(appState.selectedGlideIndex) : unhighlightGlideTrack();
-        });
-        item.addEventListener('click', () => {
+        },
+        onSelect: (glide, index) => {
             selectGlide(index);
             flyToGlide(glide);
-        });
-
-        container.appendChild(item);
+        }
     });
 }
 
@@ -827,140 +576,13 @@ function updateTrailGlideHighlight(glideIndex) {
  * @param {Object} analysis - Flight analysis data
  */
 function updateCoachingPanel(analysis) {
-    const coaching = generateCoaching(analysis);
-    const coachingHTML = generateCoachingHTML(coaching);
-
-    domCache.get(DOM_IDS.coachingTabContent).innerHTML = coachingHTML;
-
-    // Update coaching tab badge with count
-    updateCoachingTabBadge(coaching);
-
-    // Attach Start Walkthrough button listener (after HTML is rendered)
-    setTimeout(() => {
-        const startBtn = document.getElementById(DOM_IDS.startWalkthroughBtn);
-        if (startBtn) {
-            startBtn.addEventListener('click', () => startWalkthrough(coaching));
-        }
-    }, 0);
-}
-
-/**
- * Update coaching tab badge with count
- * @param {Object} coaching - Coaching data
- */
-function updateCoachingTabBadge(coaching) {
-    const totalCount =
-        coaching.whatWentWell.length +
-        coaching.whatToImprove.length +
-        coaching.safetyMindset.length +
-        coaching.nextFlightPlan.length;
-
-    const badge = domCache.get(DOM_IDS.coachingBadge);
-    if (totalCount > 0) {
-        badge.textContent = totalCount;
-        badge.classList.remove(CSS_CLASSES.hidden);
-    } else {
-        badge.classList.add(CSS_CLASSES.hidden);
-    }
-}
-
-/**
- * Generate HTML for coaching feedback sections (walkthrough style)
- * @param {Object} coaching - Coaching data
- * @returns {string} - HTML string
- */
-function generateCoachingHTML(coaching) {
-    const sections = [
-        {
-            title: '✓ Strengths',
-            subtitle: 'What you did well',
-            items: coaching.whatWentWell,
-            bgColor: 'bg-green-50',
-            borderColor: 'border-green-200',
-            iconColor: 'text-green-600',
-            icon: '✓'
-        },
-        {
-            title: '↑ Growth Areas',
-            subtitle: 'Opportunities to level up',
-            items: coaching.whatToImprove,
-            bgColor: 'bg-orange-50',
-            borderColor: 'border-orange-200',
-            iconColor: 'text-orange-600',
-            icon: '↑'
-        },
-        {
-            title: '⚠️ Mindset & Safety',
-            subtitle: 'Keep this in mind',
-            items: coaching.safetyMindset,
-            bgColor: 'bg-red-50',
-            borderColor: 'border-red-200',
-            iconColor: 'text-red-600',
-            icon: '⚠️'
-        },
-        {
-            title: '🎯 Action Plan',
-            subtitle: 'Focus for your next flight',
-            items: coaching.nextFlightPlan,
-            bgColor: 'bg-blue-50',
-            borderColor: 'border-blue-200',
-            iconColor: 'text-blue-600',
-            icon: '🎯'
-        }
-    ];
-
-    let html = '<div class="coaching-walkthrough">';
-
-    // Header
-    html += `
-        <div class="coaching-header">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-slate-900 mb-1">Flight Debrief</h3>
-                    <p class="text-xs text-slate-600">Review your performance and plan improvements</p>
-                </div>
-                <button id="startWalkthroughBtn" class="walkthrough-start-btn">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    Start Walkthrough
-                </button>
-            </div>
-        </div>
-    `;
-
-    sections.forEach(section => {
-        if (section.items.length > 0) {
-            html += `
-                <div class="coaching-section ${section.bgColor} ${section.borderColor}">
-                    <div class="coaching-section-header">
-                        <div class="coaching-section-icon ${section.iconColor}">${section.icon}</div>
-                        <div>
-                            <div class="coaching-section-title">${section.title}</div>
-                            <div class="coaching-section-subtitle">${section.subtitle}</div>
-                        </div>
-                    </div>
-                    <div class="coaching-items">
-                        ${section.items.map(item => `
-                            <div class="coaching-item">
-                                <div class="coaching-item-bullet ${section.iconColor}">•</div>
-                                <div class="coaching-item-text">${item}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
+    renderCoachingPanel({
+        analysis,
+        domCache,
+        ids: DOM_IDS,
+        cssClasses: CSS_CLASSES,
+        onStartWalkthrough: startWalkthrough
     });
-
-    html += '</div>';
-
-    if (coaching.whatWentWell.length === 0 && coaching.whatToImprove.length === 0 &&
-        coaching.safetyMindset.length === 0 && coaching.nextFlightPlan.length === 0) {
-        html = '<div class="text-sm text-slate-500 p-4">No coaching feedback available</div>';
-    }
-
-    return html;
 }
 
 /**
@@ -974,33 +596,7 @@ function startWalkthrough(coaching) {
     }
 
     const analysis = appState.currentAnalysis;
-
-    // Build flat list of walkthrough items with jump targets
-    const items = [];
-
-    const sections = [
-        { type: 'strength', icon: '✓', items: coaching.whatWentWell, color: 'text-green-600' },
-        { type: 'improve', icon: '↑', items: coaching.whatToImprove, color: 'text-orange-600' },
-        { type: 'safety', icon: '⚠️', items: coaching.safetyMindset, color: 'text-red-600' },
-        { type: 'plan', icon: '🎯', items: coaching.nextFlightPlan, color: 'text-blue-600' }
-    ];
-
-    sections.forEach(section => {
-        section.items.forEach(text => {
-            const item = {
-                type: section.type,
-                icon: section.icon,
-                text: text,
-                color: section.color,
-                jumpTarget: null // Will be populated based on text content
-            };
-
-            // Smart linking: detect what the coaching item refers to and add jump target
-            item.jumpTarget = detectJumpTarget(text, analysis);
-
-            items.push(item);
-        });
-    });
+    const items = buildWalkthroughItems(coaching, analysis);
 
     if (items.length === 0) {
         alert('No coaching items to show in walkthrough');
@@ -1020,60 +616,6 @@ function startWalkthrough(coaching) {
 
     // Show first item
     updateWalkthroughDisplay();
-}
-
-/**
- * Detect jump target for a coaching item based on its text content
- * @param {string} text - Coaching item text
- * @param {Object} analysis - Flight analysis data
- * @returns {Object|null} - Jump target with type and data
- */
-function detectJumpTarget(text, analysis) {
-    const lowerText = text.toLowerCase();
-
-    // First thermal / lift detection
-    if (lowerText.includes('first lift') || lowerText.includes('first thermal') || lowerText.includes('found lift quickly')) {
-        if (analysis.segments && analysis.segments.length > 0) {
-            return { type: 'thermal', index: 0 };
-        }
-    }
-
-    // Best thermal / strongest climb
-    if (lowerText.includes('strongest climb') || lowerText.includes('best') || lowerText.includes('centering')) {
-        if (analysis.best) {
-            const bestIndex = analysis.segments.findIndex(s =>
-                s.avgClimb === analysis.best.avgClimb && s.maxClimb === analysis.best.maxClimb
-            );
-            if (bestIndex >= 0) {
-                return { type: 'thermal', index: bestIndex };
-            }
-        }
-    }
-
-    // Speedbar opportunities
-    if (lowerText.includes('speedbar')) {
-        if (analysis.glides && analysis.glides.length > 0) {
-            const speedbarGlide = analysis.glides.find(g => g.speedbarOpportunity);
-            if (speedbarGlide) {
-                const index = analysis.glides.indexOf(speedbarGlide);
-                return { type: 'glide', index: index };
-            }
-        }
-    }
-
-    // Glide efficiency
-    if (lowerText.includes('glide') && (lowerText.includes('indirect') || lowerText.includes('efficiency'))) {
-        if (analysis.glides && analysis.glides.length > 0) {
-            const inefficientGlide = analysis.glides.find(g => g.efficiency && g.efficiency < 0.85);
-            if (inefficientGlide) {
-                const index = analysis.glides.indexOf(inefficientGlide);
-                return { type: 'glide', index: index };
-            }
-        }
-    }
-
-    // Default: jump to middle of flight for general tips
-    return { type: 'time', ratio: 0.3 };
 }
 
 /**
@@ -1963,47 +1505,28 @@ function addAnnotationMarker(annotation) {
  * Update annotations list UI
  */
 function updateAnnotationsList() {
-    const container = domCache.get(DOM_IDS.annotationsList);
-
-    // Keep the add card and append annotations after it
-    const addCardHTML = `
-        <div id="${DOM_IDS.addAnnotationCard}" class="${CSS_CLASSES.annotationCard} ${CSS_CLASSES.addCard}">
-            <button id="${DOM_IDS.addAnnotationBtn}" class="add-annotation-btn">
-                <svg class="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${SVG_PATHS.plus}"/>
-                </svg>
-                <span class="text-xs font-medium text-slate-600 mt-1">${BUTTON_TEXT.annotationMode.inactive}</span>
-            </button>
-        </div>
-    `;
-
-    const annotationsHTML = appState.annotations.map((ann, i) => `
-        <div class="${CSS_CLASSES.annotationCard} ${appState.selectedAnnotationId === ann.id ? CSS_CLASSES.selected : ''}"
-             ${DATA_ATTRS.annotationId}="${ann.id}"
-             onclick="selectAnnotation(${ann.id}); flyToAnnotation(${i})">
-            <div class="flex items-start justify-between">
-                <div class="flex-1">
-                    <div class="text-xs font-medium text-slate-900">${ann.text}</div>
-                    <div class="text-xs text-slate-500 mt-1">
-                        ${formatTime(ann.point.timeS)} | ${formatAltitude(ann.point.altM)}
-                    </div>
-                </div>
-                <button onclick="deleteAnnotation(${i}); event.stopPropagation();" class="text-slate-400 hover:text-red-500">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${SVG_PATHS.close}" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    `).join('');
-
-    container.innerHTML = addCardHTML + annotationsHTML;
-
-    // Re-attach event listener for the new add button (clears cache for this element)
-    domCache.clear(DOM_IDS.addAnnotationBtn);
-    domCache.get(DOM_IDS.addAnnotationBtn).addEventListener('click', () => {
-        toggleAnnotationMode();
+    renderAnnotationsList({
+        annotations: appState.annotations,
+        selectedAnnotationId: appState.selectedAnnotationId,
+        container: domCache.get(DOM_IDS.annotationsList),
+        ids: DOM_IDS,
+        cssClasses: CSS_CLASSES,
+        svgPaths: SVG_PATHS,
+        buttonText: BUTTON_TEXT,
+        formatters: {
+            formatAltitude,
+            formatTime
+        },
+        onAdd: toggleAnnotationMode,
+        onDelete: (_annotation, index) => deleteAnnotation(index),
+        onSelect: (annotation, index) => {
+            selectAnnotation(annotation.id);
+            flyToAnnotation(index);
+        }
     });
+
+    // Clear cache for the recreated add button.
+    domCache.clear(DOM_IDS.addAnnotationBtn);
 }
 
 /**
@@ -2484,7 +2007,7 @@ function replayAnimationLoop() {
  * @param {number} time - Time in seconds
  */
 function seekReplay(time) {
-    appState.replay.currentTime = Math.max(0, Math.min(time, appState.replay.totalDuration));
+    appState.replay.currentTime = clampReplayTime(time, appState.replay.totalDuration);
     updateReplayUI();
     updateAircraftPosition();
     updateTrackVisibility();
@@ -2542,16 +2065,16 @@ function resetReplay() {
  * Update replay UI (progress bar and time display)
  */
 function updateReplayUI() {
-    const progress = appState.replay.totalDuration > 0
-        ? (appState.replay.currentTime / appState.replay.totalDuration) * 100
-        : 0;
+    const progress = getReplayProgressPercent(appState.replay.currentTime, appState.replay.totalDuration);
 
     domCache.get(DOM_IDS.replayProgress).style.width = `${progress}%`;
     domCache.get(DOM_IDS.replayHandle).style.left = `${progress}%`;
 
-    const currentTimeStr = formatReplayTime(appState.replay.currentTime);
-    const totalTimeStr = formatReplayTime(appState.replay.totalDuration);
-    domCache.get(DOM_IDS.replayTime).textContent = `${currentTimeStr} / ${totalTimeStr}`;
+    domCache.get(DOM_IDS.replayTime).textContent = getReplayTimeLabel(
+        appState.replay.currentTime,
+        appState.replay.totalDuration,
+        formatReplayTime
+    );
 }
 
 /**
@@ -2561,65 +2084,26 @@ function updateAircraftPosition() {
     if (!appState.replay.aircraftEntity || !appState.hasFlightData()) return;
 
     const points = appState.currentAnalysis.points;
-    const startTime = points[0].timeS;
-    const currentAbsTime = startTime + appState.replay.currentTime;
-
-    // Find the two points surrounding the current time
-    let prevIndex = 0;
-    for (let i = 0; i < points.length - 1; i++) {
-        if (points[i].timeS <= currentAbsTime && points[i + 1].timeS > currentAbsTime) {
-            prevIndex = i;
-            break;
-        }
-        if (i === points.length - 2) {
-            prevIndex = points.length - 1;
-        }
-    }
-
-    const nextIndex = Math.min(prevIndex + 1, points.length - 1);
-
-    // Interpolate position
-    let lon, lat, alt;
-
-    if (prevIndex === nextIndex) {
-        // At the last point
-        lon = points[prevIndex].lon;
-        lat = points[prevIndex].lat;
-        alt = appState.currentAnalysis.calculatedHeights
-            ? appState.currentAnalysis.calculatedHeights[prevIndex]
-            : points[prevIndex].altM;
-    } else {
-        // Linear interpolation between points
-        const t1 = points[prevIndex].timeS;
-        const t2 = points[nextIndex].timeS;
-        const t = (currentAbsTime - t1) / (t2 - t1);
-
-        lon = points[prevIndex].lon + t * (points[nextIndex].lon - points[prevIndex].lon);
-        lat = points[prevIndex].lat + t * (points[nextIndex].lat - points[prevIndex].lat);
-
-        const alt1 = appState.currentAnalysis.calculatedHeights
-            ? appState.currentAnalysis.calculatedHeights[prevIndex]
-            : points[prevIndex].altM;
-        const alt2 = appState.currentAnalysis.calculatedHeights
-            ? appState.currentAnalysis.calculatedHeights[nextIndex]
-            : points[nextIndex].altM;
-        alt = alt1 + t * (alt2 - alt1);
-    }
+    const position = getAircraftPositionAtReplayTime(
+        points,
+        appState.currentAnalysis.calculatedHeights,
+        appState.replay.currentTime
+    );
 
     // Update marker position
-    appState.replay.aircraftEntity.position = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
+    appState.replay.aircraftEntity.position = Cesium.Cartesian3.fromDegrees(position.lon, position.lat, position.alt);
 
     // Update altitude chart replay position
     if (appState.altitudeChart) {
-        appState.altitudeChart.setReplayPosition(prevIndex);
+        appState.altitudeChart.setReplayPosition(position.index);
     }
 
     // Update annotation visibility based on current replay position
-    updateAnnotationVisibility(prevIndex);
+    updateAnnotationVisibility(position.index);
 
     // Follow aircraft with camera (if no thermal is selected)
     if (appState.selectedThermalIndex === -1 && appState.renderer && appState.renderer.orbitCenter) {
-        appState.renderer.followPosition(lon, lat, alt);
+        appState.renderer.followPosition(position.lon, position.lat, position.alt);
     }
 }
 
@@ -2646,18 +2130,7 @@ function updateTrackVisibility() {
     if (!appState.renderer || !appState.hasFlightData()) return;
 
     const points = appState.currentAnalysis.points;
-    const startTime = points[0].timeS;
-    const currentAbsTime = startTime + appState.replay.currentTime;
-
-    // Find the current point index
-    let currentPointIndex = 0;
-    for (let i = 0; i < points.length; i++) {
-        if (points[i].timeS <= currentAbsTime) {
-            currentPointIndex = i;
-        } else {
-            break;
-        }
-    }
+    const currentPointIndex = getCurrentReplayPointIndex(points, appState.replay.currentTime);
 
     // Store current point index for use by other functions
     appState.replay.currentPointIndex = currentPointIndex;
