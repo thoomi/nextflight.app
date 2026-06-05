@@ -203,11 +203,6 @@ function getEmptyStateHtml({ iconPath, title, text }) {
     `;
 }
 
-if (typeof window !== 'undefined') {
-    window.renderThermalsList = renderThermalsList;
-    window.renderGlidesList = renderGlidesList;
-}
-
 export {
     renderThermalsList,
     renderGlidesList,

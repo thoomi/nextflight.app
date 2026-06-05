@@ -3,6 +3,8 @@
  * Handles 3D visualization of flight tracks using CesiumJS
  */
 
+import { APP_CONFIG } from './config.js';
+
 class CesiumRenderer {
     constructor(containerId) {
         this.containerId = containerId;
@@ -852,7 +854,4 @@ class CesiumRenderer {
     }
 }
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = CesiumRenderer;
-}
+export { CesiumRenderer };

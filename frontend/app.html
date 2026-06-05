@@ -1798,30 +1798,6 @@
       </div>
     </div>
 
-    <!-- Scripts -->
-    <!-- Configuration and utilities (must load first) -->
-    <script src="/js/config.js"></script>
-    <script src="/js/constants.js"></script>
-    <script src="/js/utils.js"></script>
-    <script src="/js/state.js"></script>
-
-    <!-- Core modules -->
-    <script src="/js/altitude-chart.js"></script>
-    <script src="/js/cesium-renderer.js"></script>
-    <script type="module">
-      import '/js/igc-parser.js';
-      import '/js/flight-analyzer.js';
-      import '/js/analyzer/upload.js';
-      import '/js/analyzer/coaching-panel.js';
-      import '/js/analyzer/metrics-panel.js';
-      import '/js/analyzer/segment-lists.js';
-      import '/js/analyzer/walkthrough.js';
-      import '/js/analyzer/annotations-list.js';
-      import '/js/analyzer/replay-state.js';
-
-      const script = document.createElement('script');
-      script.src = '/js/app.js';
-      document.body.appendChild(script);
-    </script>
+    <script type="module" src="/js/app.js"></script>
   </body>
 </html>

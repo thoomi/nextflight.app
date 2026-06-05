@@ -3,6 +3,8 @@
  * Centralized state management for the flight visualization app
  */
 
+import { APP_CONFIG } from './config.js';
+
 class AppState {
     constructor() {
         this.reset();
@@ -410,7 +412,4 @@ class AppState {
 // Create singleton instance
 const appState = new AppState();
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { AppState, appState };
-}
+export { AppState, appState };

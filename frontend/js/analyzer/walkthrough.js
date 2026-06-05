@@ -64,11 +64,6 @@ function detectJumpTarget(text, analysis) {
     return { type: 'time', ratio: 0.3 };
 }
 
-if (typeof window !== 'undefined') {
-    window.buildWalkthroughItems = buildWalkthroughItems;
-    window.detectWalkthroughJumpTarget = detectJumpTarget;
-}
-
 export {
     buildWalkthroughItems,
     detectJumpTarget

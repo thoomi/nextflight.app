@@ -87,10 +87,6 @@ function getCenteringQuality(centeringStd) {
     return 'Needs Work';
 }
 
-if (typeof window !== 'undefined') {
-    window.renderMetricsPanel = renderMetricsPanel;
-}
-
 export {
     renderMetricsPanel,
     getCenteringQuality

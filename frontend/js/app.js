@@ -3,6 +3,59 @@
  * Orchestrates file upload, parsing, analysis, and visualization
  */
 
+import { AltitudeChart } from './altitude-chart.js';
+import { APP_CONFIG } from './config.js';
+import {
+    BUTTON_TEXT,
+    CSS_CLASSES,
+    DATA_ATTRS,
+    DOM_IDS,
+    ERROR_MESSAGES,
+    LOG_PREFIX,
+    SUCCESS_MESSAGES,
+    SVG_PATHS,
+    TABS
+} from './constants.js';
+import { CesiumRenderer } from './cesium-renderer.js';
+import {
+    clamp,
+    createDOMCache,
+    findClosestPointIndex,
+    formatAltitude,
+    formatDistance,
+    formatGlideRatio,
+    formatReplayTime,
+    formatSpeed,
+    formatTime,
+    formatTurnRate,
+    formatVario,
+    setVisible,
+    truncateText
+} from './utils.js';
+import { appState } from './state.js';
+import {
+    loadAnalyzerSampleTrack,
+    loadAnalyzerUploadedFile
+} from './analyzer/upload.js';
+import { renderCoachingPanel } from './analyzer/coaching-panel.js';
+import { renderMetricsPanel } from './analyzer/metrics-panel.js';
+import {
+    renderGlidesList,
+    renderThermalsList
+} from './analyzer/segment-lists.js';
+import {
+    buildWalkthroughItems,
+    detectJumpTarget
+} from './analyzer/walkthrough.js';
+import { renderAnnotationsList } from './analyzer/annotations-list.js';
+import {
+    clampReplayTime,
+    getAircraftPositionAtReplayTime,
+    getCurrentPointIndex as getCurrentReplayPointIndex,
+    getReplayProgressPercent,
+    getReplayTimeLabel
+} from './analyzer/replay-state.js';
+
 // Create DOM cache for frequently accessed elements
 const domCache = createDOMCache();
 

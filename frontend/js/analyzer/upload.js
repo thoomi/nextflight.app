@@ -25,12 +25,6 @@ function analyzeAnalyzerTrackContent(content, fileName) {
     };
 }
 
-if (typeof window !== 'undefined') {
-    window.loadAnalyzerSampleTrack = loadAnalyzerSampleTrack;
-    window.loadAnalyzerUploadedFile = loadAnalyzerUploadedFile;
-    window.analyzeAnalyzerTrackContent = analyzeAnalyzerTrackContent;
-}
-
 export {
     loadAnalyzerSampleTrack,
     loadAnalyzerUploadedFile,

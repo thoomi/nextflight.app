@@ -89,10 +89,6 @@ function createAnnotationCard({
     return card;
 }
 
-if (typeof window !== 'undefined') {
-    window.renderAnnotationsList = renderAnnotationsList;
-}
-
 export {
     renderAnnotationsList
 };

@@ -137,10 +137,6 @@ function generateCoachingHTML(coaching) {
     return html;
 }
 
-if (typeof window !== 'undefined') {
-    window.renderCoachingPanel = renderCoachingPanel;
-}
-
 export {
     renderCoachingPanel,
     generateCoachingHTML,

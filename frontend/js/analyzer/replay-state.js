@@ -70,14 +70,6 @@ function getReplayTimeLabel(currentTime, totalDuration, formatReplayTime) {
     return `${formatReplayTime(currentTime)} / ${formatReplayTime(totalDuration)}`;
 }
 
-if (typeof window !== 'undefined') {
-    window.clampReplayTime = clampReplayTime;
-    window.getReplayProgressPercent = getReplayProgressPercent;
-    window.getCurrentReplayPointIndex = getCurrentPointIndex;
-    window.getAircraftPositionAtReplayTime = getAircraftPositionAtReplayTime;
-    window.getReplayTimeLabel = getReplayTimeLabel;
-}
-
 export {
     clampReplayTime,
     getAircraftPositionAtReplayTime,

@@ -152,7 +152,4 @@ Object.freeze(APP_CONFIG.chart);
 Object.freeze(APP_CONFIG.markers);
 Object.freeze(APP_CONFIG.dev);
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = APP_CONFIG;
-}
+export { APP_CONFIG };

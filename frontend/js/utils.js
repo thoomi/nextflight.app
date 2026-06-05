@@ -318,29 +318,26 @@ function getNestedValue(obj, path, defaultValue = null) {
     return current;
 }
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatTime,
-        formatReplayTime,
-        formatAltitude,
-        formatVario,
-        formatDistance,
-        formatGlideRatio,
-        formatWind,
-        formatPercentage,
-        formatSpeed,
-        formatTurnRate,
-        clamp,
-        truncateText,
-        debounce,
-        createDOMCache,
-        setClasses,
-        setVisible,
-        lerp,
-        distanceSquaredDeg,
-        findClosestPointIndex,
-        findPointIndexAtTime,
-        getNestedValue
-    };
-}
+export {
+    formatTime,
+    formatReplayTime,
+    formatAltitude,
+    formatVario,
+    formatDistance,
+    formatGlideRatio,
+    formatWind,
+    formatPercentage,
+    formatSpeed,
+    formatTurnRate,
+    clamp,
+    truncateText,
+    debounce,
+    createDOMCache,
+    setClasses,
+    setVisible,
+    lerp,
+    distanceSquaredDeg,
+    findClosestPointIndex,
+    findPointIndexAtTime,
+    getNestedValue
+};

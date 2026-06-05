@@ -208,17 +208,14 @@ Object.freeze(ERROR_MESSAGES);
 Object.freeze(SUCCESS_MESSAGES);
 Object.freeze(LOG_PREFIX);
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        DOM_IDS,
-        CSS_CLASSES,
-        DATA_ATTRS,
-        TABS,
-        BUTTON_TEXT,
-        SVG_PATHS,
-        ERROR_MESSAGES,
-        SUCCESS_MESSAGES,
-        LOG_PREFIX
-    };
-}
+export {
+    DOM_IDS,
+    CSS_CLASSES,
+    DATA_ATTRS,
+    TABS,
+    BUTTON_TEXT,
+    SVG_PATHS,
+    ERROR_MESSAGES,
+    SUCCESS_MESSAGES,
+    LOG_PREFIX
+};
