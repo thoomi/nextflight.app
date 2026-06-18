@@ -18,7 +18,11 @@ export default defineConfig({
         concept: resolve(root, 'concept.html'),
         index: resolve(root, 'index.html'),
       },
+      external: ['three'],
     },
+  },
+  optimizeDeps: {
+    exclude: ['three'],
   },
   server: {
     host: '127.0.0.1',
