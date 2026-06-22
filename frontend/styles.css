@@ -5,6 +5,11 @@
   --nf-shadow: rgba(15, 23, 42, 0.08);
   --nf-text-success: #047857;
   --nf-text-error: #dc2626;
+  --fa-paper: #F4EFE9;
+  --fa-ink: #2A3140;
+  --fa-accent: #CE8A6A;
+  --fa-accent-soft: #ECCDBB;
+  --fa-muted: #6C6A6B;
 }
 
 /* Custom animations (CSS-only) */
@@ -71,6 +76,101 @@
 }
 .form-status--success { color: var(--nf-text-success); }
 .form-status--error { color: var(--nf-text-error); }
+
+.flight-art-entry {
+  background: var(--fa-paper);
+  color: var(--fa-ink);
+}
+
+.flight-art-entry__intro {
+  align-items: end;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.flight-art-entry__eyebrow {
+  color: var(--fa-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.flight-art-entry__intro p:not(.flight-art-entry__eyebrow) {
+  color: var(--fa-muted);
+}
+
+.flight-art-entry__cta {
+  align-items: center;
+  background: var(--fa-accent);
+  border: 1px solid var(--fa-accent);
+  border-radius: 0.75rem;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 800;
+  justify-content: center;
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.flight-art-entry__cta:hover {
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--fa-accent) 24%, transparent);
+}
+
+.flight-art-gallery {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 28px;
+  position: relative;
+}
+
+.flight-art-gallery__item {
+  background: color-mix(in srgb, var(--fa-paper) 80%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--fa-accent-soft) 68%, #ffffff);
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.flight-art-gallery__item canvas {
+  aspect-ratio: 2480 / 3508;
+  background: #ffffff;
+  box-shadow: 0 18px 28px -24px rgba(15, 23, 42, 0.65);
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.flight-art-gallery__item span {
+  color: var(--fa-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.flight-art-gallery__status {
+  color: var(--fa-muted);
+  font-size: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.flight-art-gallery[data-ready='true'] .flight-art-gallery__status {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .flight-art-entry__intro {
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+  }
+
+  .flight-art-gallery {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
 
 /* Visually hidden utility for skip link (fallback if Tailwind not loaded early) */
 .sr-only {

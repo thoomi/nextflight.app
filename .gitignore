@@ -12,6 +12,11 @@ yarn-error.log*
 # Env
 .env
 .env.*
+!.env.example
+
+# Supabase local stack
+supabase/.temp/
+supabase/.branches/
 
 # Mac/OS
 .DS_Store
