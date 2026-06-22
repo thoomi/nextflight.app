@@ -21,7 +21,12 @@ test('walkthrough module builds items with jump targets', async ({ page }) => {
       ],
     };
     const coaching = {
-      whatWentWell: ['Found lift quickly near launch.'],
+      whatWentWell: [
+        {
+          text: 'Found lift quickly near launch.',
+          evidence: [{ target: { type: 'thermal', index: 1, timeS: 42 } }],
+        },
+      ],
       whatToImprove: ['Your strongest climb was left early.', '2 glide(s) were indirect.'],
       safetyMindset: ['Breathe and stay loose.'],
       nextFlightPlan: ['Use speedbar in headwind.'],
@@ -43,7 +48,7 @@ test('walkthrough module builds items with jump targets', async ({ page }) => {
   expect(result.items[0]).toMatchObject({
     type: 'strength',
     icon: '✓',
-    jumpTarget: { type: 'thermal', index: 0 },
+    jumpTarget: { type: 'thermal', index: 1, timeS: 42 },
   });
   expect(result.items[1].jumpTarget).toEqual({ type: 'thermal', index: 1 });
   expect(result.items[2].jumpTarget).toEqual({ type: 'glide', index: 1 });

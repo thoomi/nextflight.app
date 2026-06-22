@@ -796,6 +796,257 @@ function tagGlidesWithSpeedbarInfo(glides, opportunities) {
     }
 }
 
+function assignStableSegmentIds(segments, glides) {
+    segments.forEach((thermal, index) => {
+        thermal.id = `thermal-${index + 1}`;
+    });
+
+    glides.forEach((glide, index) => {
+        glide.id = `glide-${index + 1}`;
+    });
+}
+
+function getRelativeTime(summary, absoluteTime) {
+    const points = summary.points || [];
+    if (points.length === 0 || absoluteTime === null || absoluteTime === undefined) {
+        return null;
+    }
+    return absoluteTime - points[0].timeS;
+}
+
+function getRelativePointTime(summary, pointIndex) {
+    const points = summary.points || [];
+    if (points.length === 0 || pointIndex < 0 || pointIndex >= points.length) {
+        return null;
+    }
+    return points[pointIndex].timeS - points[0].timeS;
+}
+
+function getSegmentTarget(summary, type, segment, index) {
+    if (!segment) return null;
+    const focusTime = type === 'thermal'
+        ? getRelativeTime(summary, segment.endT)
+        : getRelativePointTime(summary, Math.floor((segment.startIdx + segment.endIdx) / 2));
+
+    return {
+        type,
+        index,
+        id: segment.id,
+        timeS: focusTime,
+        startIdx: segment.startIdx,
+        endIdx: segment.endIdx
+    };
+}
+
+function makeEvidence({ id, label, detail, target = null, metric = null }) {
+    return {
+        id,
+        label,
+        detail,
+        target,
+        metric,
+        timeS: target ? target.timeS : null,
+        eventId: target ? target.id : null
+    };
+}
+
+function getThermalEvidence(summary, thermal, index, detail, metric = null) {
+    return makeEvidence({
+        id: `${thermal.id}-evidence`,
+        label: `Thermal ${index + 1}`,
+        detail,
+        target: getSegmentTarget(summary, 'thermal', thermal, index),
+        metric
+    });
+}
+
+function getGlideEvidence(summary, glide, index, detail, metric = null) {
+    return makeEvidence({
+        id: `${glide.id}-evidence`,
+        label: `Glide ${index + 1}`,
+        detail,
+        target: getSegmentTarget(summary, 'glide', glide, index),
+        metric
+    });
+}
+
+function getFlightEvidence(summary, id, label, detail, pointIndex = null, metric = null) {
+    const target = pointIndex === null ? null : {
+        type: 'point',
+        index: pointIndex,
+        id,
+        timeS: getRelativePointTime(summary, pointIndex)
+    };
+
+    return makeEvidence({ id, label, detail, target, metric });
+}
+
+function getBestThermalIndex(summary) {
+    if (!summary.best || !summary.segments) return -1;
+    return summary.segments.findIndex((segment) =>
+        segment.id === summary.best.id ||
+        (segment.avgClimb === summary.best.avgClimb && segment.maxClimb === summary.best.maxClimb)
+    );
+}
+
+function getWorstAltitudePointIndex(summary) {
+    const points = summary.points || [];
+    if (points.length === 0) return null;
+
+    let minIndex = 0;
+    for (let i = 1; i < points.length; i++) {
+        if (points[i].altM < points[minIndex].altM) {
+            minIndex = i;
+        }
+    }
+    return minIndex;
+}
+
+function makeCoachingItem({ id, text, evidence = [], priority = 'normal', plainLanguage = null }) {
+    return {
+        id,
+        text,
+        plainLanguage: plainLanguage || text,
+        evidence,
+        priority
+    };
+}
+
+function getCoachingText(item) {
+    return typeof item === 'string' ? item : item.text;
+}
+
+function buildEventTimeline(summary) {
+    const events = [];
+    const points = summary.points || [];
+    const lowPointIndex = getWorstAltitudePointIndex(summary);
+
+    events.push({
+        id: 'flight-summary',
+        type: 'summary',
+        title: 'Flight summary',
+        timeS: 0,
+        summary: `${Math.round(summary.durationTotal / 60)} min, ${(summary.totalTrackDistance / 1000).toFixed(1)} km`,
+        metrics: {
+            durationS: summary.durationTotal,
+            totalTrackDistance: summary.totalTrackDistance,
+            altitudeRange: summary.altitudeRange
+        }
+    });
+
+    summary.segments.forEach((thermal, index) => {
+        events.push({
+            id: thermal.id,
+            type: 'thermal',
+            title: `Thermal ${index + 1}`,
+            timeS: getRelativeTime(summary, thermal.startT),
+            startIdx: thermal.startIdx,
+            endIdx: thermal.endIdx,
+            target: getSegmentTarget(summary, 'thermal', thermal, index),
+            summary: `${thermal.avgClimb.toFixed(1)} m/s average, ${thermal.maxClimb.toFixed(1)} m/s peak`,
+            metrics: {
+                avgClimb: thermal.avgClimb,
+                maxClimb: thermal.maxClimb,
+                circles: thermal.circles,
+                durationS: thermal.durationS,
+                earlyExit: thermal.earlyExit
+            }
+        });
+
+        if (thermal.earlyExit) {
+            events.push({
+                id: `${thermal.id}-early-exit`,
+                type: 'early-exit',
+                title: `Possible early exit in thermal ${index + 1}`,
+                timeS: getRelativeTime(summary, thermal.earlyExitT),
+                startIdx: thermal.startIdx,
+                endIdx: thermal.endIdx,
+                target: getSegmentTarget(summary, 'thermal', thermal, index),
+                summary: `Peak ${thermal.maxClimb.toFixed(1)} m/s and left after ${Math.round(thermal.durationS)} s`,
+                severity: 'medium'
+            });
+        }
+    });
+
+    summary.glides.forEach((glide, index) => {
+        events.push({
+            id: glide.id,
+            type: 'glide',
+            title: `Glide ${index + 1}`,
+            timeS: getRelativeTime(summary, glide.startT),
+            startIdx: glide.startIdx,
+            endIdx: glide.endIdx,
+            target: getSegmentTarget(summary, 'glide', glide, index),
+            summary: `${glide.direction}, ${(glide.straightDistance / 1000).toFixed(1)} km${glide.glideRatio ? `, ${glide.glideRatio.toFixed(1)}:1` : ''}`,
+            metrics: {
+                avgVario: glide.avgVario,
+                glideRatio: glide.glideRatio,
+                efficiency: glide.efficiency,
+                altitudeChange: glide.altChange,
+                glideType: glide.glideType
+            }
+        });
+    });
+
+    (summary.speedbarOpportunities || []).forEach((opportunity, index) => {
+        const glideIndex = summary.glides.indexOf(opportunity.glide);
+        if (glideIndex < 0) return;
+
+        events.push({
+            id: `speedbar-${index + 1}`,
+            type: 'speedbar-opportunity',
+            title: `Speedbar opportunity on glide ${glideIndex + 1}`,
+            timeS: getRelativeTime(summary, opportunity.startT),
+            target: getSegmentTarget(summary, 'glide', opportunity.glide, glideIndex),
+            summary: opportunity.reasons.join(', '),
+            metrics: opportunity.estimatedBenefit
+        });
+    });
+
+    if (lowPointIndex !== null && points[lowPointIndex]) {
+        events.push({
+            id: 'low-point',
+            type: 'low-point',
+            title: 'Lowest point',
+            timeS: getRelativePointTime(summary, lowPointIndex),
+            target: {
+                type: 'point',
+                id: 'low-point',
+                index: lowPointIndex,
+                timeS: getRelativePointTime(summary, lowPointIndex)
+            },
+            summary: `${Math.round(points[lowPointIndex].altM)} m`,
+            metrics: {
+                altitudeM: points[lowPointIndex].altM
+            }
+        });
+    }
+
+    if (summary.gpsGaps > 0) {
+        events.push({
+            id: 'gps-gaps',
+            type: 'safety-note',
+            title: 'GPS gaps',
+            timeS: 0,
+            summary: `${summary.gpsGaps} signal gap(s) detected`,
+            severity: 'low'
+        });
+    }
+
+    if (summary.lowAltitudeWarnings > 0) {
+        events.push({
+            id: 'low-altitude-awareness',
+            type: 'safety-note',
+            title: 'Low altitude awareness',
+            timeS: 0,
+            summary: 'Part of the flight was close to launch-height terrain margin.',
+            severity: 'medium'
+        });
+    }
+
+    return events.sort((a, b) => (a.timeS || 0) - (b.timeS || 0));
+}
+
 /**
  * Calculate estimated benefit of using speedbar
  * @param {GlideSegment} glide - Glide segment
@@ -886,6 +1137,8 @@ function analyze(points) {
 
     // Detect glide segments
     const glides = detectGlideSegments(points, segments, varioS, turnS, heading, speedS);
+
+    assignStableSegmentIds(segments, glides);
 
     // Estimate wind from thermal drift
     const wind = estimateWind(points, segments);
@@ -1011,7 +1264,7 @@ function analyze(points) {
         }
     }
 
-    return {
+    const summary = {
         // Basic flight stats
         durationTotal,
         maxAlt,
@@ -1075,6 +1328,10 @@ function analyze(points) {
         heading,
         speed
     };
+
+    summary.timeline = buildEventTimeline(summary);
+
+    return summary;
 }
 
 /**
@@ -1089,8 +1346,32 @@ function generateCoaching(summary) {
     const glides = summary.glides || [];
     const wind = summary.wind;
     const speedbarOps = summary.speedbarOpportunities || [];
+    const bestIndex = getBestThermalIndex(summary);
+    const bestEvidence = best && bestIndex >= 0
+        ? getThermalEvidence(
+            summary,
+            best,
+            bestIndex,
+            `Avg ${best.avgClimb.toFixed(1)} m/s, peak ${best.maxClimb.toFixed(1)} m/s`,
+            { avgClimb: best.avgClimb, maxClimb: best.maxClimb }
+        )
+        : null;
+    const lowPointIndex = getWorstAltitudePointIndex(summary);
+    const flightEvidence = getFlightEvidence(
+        summary,
+        'flight-summary',
+        'Flight summary',
+        `${Math.round(summary.durationTotal / 60)} min, ${(summary.totalTrackDistance / 1000).toFixed(1)} km`,
+        lowPointIndex,
+        { durationS: summary.durationTotal, totalTrackDistance: summary.totalTrackDistance }
+    );
 
     const coaching = {
+        quickDebrief: {
+            whatWentWell: null,
+            altitudeCost: null,
+            nextAction: null
+        },
         whatWentWell: [],
         whatToImprove: [],
         safetyMindset: [],
@@ -1099,21 +1380,48 @@ function generateCoaching(summary) {
 
     // What went well - prioritized logic matching Python
     if (best && best.avgClimb > 0.6) {
-        coaching.whatWentWell.push('You found usable lift and maintained a solid average climb.');
+        coaching.whatWentWell.push(makeCoachingItem({
+            id: 'well-usable-lift',
+            text: 'You found usable lift and maintained a solid average climb.',
+            evidence: bestEvidence ? [bestEvidence] : [flightEvidence]
+        }));
     } else if (ttf !== null && ttf < 300) {
-        coaching.whatWentWell.push('You found lift quickly after launch — good scanning and line choice.');
+        const firstThermal = summary.segments[0];
+        coaching.whatWentWell.push(makeCoachingItem({
+            id: 'well-fast-first-lift',
+            text: 'You found lift quickly after launch - good scanning and line choice.',
+            evidence: firstThermal
+                ? [getThermalEvidence(summary, firstThermal, 0, `First climb after ${Math.round(ttf / 60)} min`)]
+                : [flightEvidence]
+        }));
     } else {
-        coaching.whatWentWell.push('You kept the flight smooth; building airtime matters.');
+        coaching.whatWentWell.push(makeCoachingItem({
+            id: 'well-smooth-airtime',
+            text: 'You kept the flight smooth; building airtime matters.',
+            evidence: [flightEvidence]
+        }));
     }
 
     // Additional positive observations
     if (best && best.centeringStd < 0.4) {
-        coaching.whatWentWell.push('Good centering consistency.');
+        coaching.whatWentWell.push(makeCoachingItem({
+            id: 'well-centering',
+            text: 'Good centering consistency.',
+            evidence: bestEvidence ? [bestEvidence] : []
+        }));
     }
 
     // Glide performance feedback
     if (summary.avgGlideRatio && summary.avgGlideRatio >= CONFIG.TYPICAL_GLIDE_RATIO) {
-        coaching.whatWentWell.push(`Good glide performance (avg ${summary.avgGlideRatio.toFixed(1)}:1).`);
+        const bestGlideIndex = glides.findIndex((glide) => glide.glideRatio === summary.bestGlideRatio);
+        const bestGlide = bestGlideIndex >= 0 ? glides[bestGlideIndex] : null;
+        coaching.whatWentWell.push(makeCoachingItem({
+            id: 'well-glide-performance',
+            text: `Good glide performance (avg ${summary.avgGlideRatio.toFixed(1)}:1).`,
+            evidence: bestGlide
+                ? [getGlideEvidence(summary, bestGlide, bestGlideIndex, `Best glide ${summary.bestGlideRatio.toFixed(1)}:1`, { glideRatio: summary.bestGlideRatio })]
+                : []
+        }));
     }
 
     // Ridge soaring detection
@@ -1121,27 +1429,43 @@ function generateCoaching(summary) {
     if (soaringGlides.length > 0) {
         const totalSoaringTime = soaringGlides.reduce((sum, g) => sum + g.durationS, 0);
         if (totalSoaringTime > 60) {
-            coaching.whatWentWell.push(`Good ridge soaring skills (${Math.round(totalSoaringTime / 60)} min in lift).`);
+            const soaringIndex = glides.indexOf(soaringGlides[0]);
+            coaching.whatWentWell.push(makeCoachingItem({
+                id: 'well-ridge-soaring',
+                text: `Good ridge soaring skills (${Math.round(totalSoaringTime / 60)} min in lift).`,
+                evidence: [getGlideEvidence(summary, soaringGlides[0], soaringIndex, 'Ridge-soaring glide segment')]
+            }));
         }
     }
 
     // What to improve - specific scenarios matching Python
     if (best && best.maxClimb >= 1.5 && best.durationS < 70) {
-        coaching.whatToImprove.push(
-            'You likely exited your strongest climb early. Commit to ~2 more circles when vario ≥ +1.5 m/s.'
-        );
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-early-exit',
+            text: 'You likely exited your strongest climb early. Commit to about 2 more circles when vario is +1.5 m/s or better.',
+            evidence: bestEvidence ? [bestEvidence] : [],
+            priority: 'high'
+        }));
     } else if (best && best.centeringStd > 0.6 && best.circles >= 1.5) {
-        coaching.whatToImprove.push(
-            `Centering consistency can improve. Drift ~30 m toward ${best.centerTipDir} where lift peaked.`
-        );
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-centering',
+            text: `Centering consistency can improve. Drift about 30 m toward ${best.centerTipDir} where lift peaked.`,
+            evidence: bestEvidence ? [bestEvidence] : []
+        }));
     } else if (ttf !== null && ttf > 600) {
-        coaching.whatToImprove.push(
-            'It took a while to find first lift. Probe windward edges of terrain triggers earlier.'
-        );
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-first-lift',
+            text: 'It took a while to find first lift. Probe windward edges of terrain triggers earlier.',
+            evidence: summary.segments[0]
+                ? [getThermalEvidence(summary, summary.segments[0], 0, `First climb after ${Math.round(ttf / 60)} min`)]
+                : [flightEvidence]
+        }));
     } else {
-        coaching.whatToImprove.push(
-            'During climbs, widen slightly when it feels rough; reassess after one calm circle instead of bailing.'
-        );
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-calm-circle',
+            text: 'During climbs, widen slightly when it feels rough; reassess after one calm circle instead of bailing.',
+            evidence: bestEvidence ? [bestEvidence] : [flightEvidence]
+        }));
     }
 
     // Speedbar coaching
@@ -1151,57 +1475,131 @@ function generateCoaching(summary) {
             const totalTimeSaved = worthwhileOps.reduce((sum, op) => sum + op.estimatedBenefit.timeSavedSeconds, 0);
             const firstOp = worthwhileOps[0];
             const reasonsStr = firstOp.reasons.join(', ');
-            coaching.whatToImprove.push(
-                `${worthwhileOps.length} glide(s) where speedbar would help (${reasonsStr}). ` +
-                `Potential time savings: ~${Math.round(totalTimeSaved / 60)} min.`
-            );
+            const glideIndex = glides.indexOf(firstOp.glide);
+            coaching.whatToImprove.push(makeCoachingItem({
+                id: 'improve-speedbar',
+                text: `${worthwhileOps.length} glide(s) where speedbar would help (${reasonsStr}). ` +
+                    `Potential time savings: ~${Math.round(totalTimeSaved / 60)} min.`,
+                evidence: glideIndex >= 0
+                    ? [getGlideEvidence(summary, firstOp.glide, glideIndex, reasonsStr, firstOp.estimatedBenefit)]
+                    : [],
+                priority: 'high'
+            }));
         }
     }
 
     // Glide efficiency coaching
     const inefficientGlides = glides.filter(g => g.efficiency < 0.85 && g.glideType === 'straight');
     if (inefficientGlides.length > 0) {
-        coaching.whatToImprove.push(
-            `${inefficientGlides.length} glide(s) were indirect (efficiency <85%). Fly straighter lines to save altitude.`
-        );
+        const glideIndex = glides.indexOf(inefficientGlides[0]);
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-indirect-glides',
+            text: `${inefficientGlides.length} glide(s) were indirect (efficiency below 85%). Fly straighter lines to save altitude.`,
+            evidence: [getGlideEvidence(
+                summary,
+                inefficientGlides[0],
+                glideIndex,
+                `${Math.round(inefficientGlides[0].efficiency * 100)}% direct`,
+                { efficiency: inefficientGlides[0].efficiency }
+            )]
+        }));
     }
 
     // Poor glide ratio feedback
     if (summary.avgGlideRatio && summary.avgGlideRatio < CONFIG.TYPICAL_GLIDE_RATIO - 2) {
-        coaching.whatToImprove.push(
-            `Average glide ratio ${summary.avgGlideRatio.toFixed(1)}:1 is below typical. Check wing trim and avoid flying too slow.`
-        );
+        const worstGlideIndex = glides.findIndex((glide) => glide.glideRatio === summary.worstGlideRatio);
+        coaching.whatToImprove.push(makeCoachingItem({
+            id: 'improve-glide-ratio',
+            text: `Average glide ratio ${summary.avgGlideRatio.toFixed(1)}:1 is below typical. Check wing trim and avoid flying too slow.`,
+            evidence: worstGlideIndex >= 0
+                ? [getGlideEvidence(summary, glides[worstGlideIndex], worstGlideIndex, `Worst glide ${summary.worstGlideRatio.toFixed(1)}:1`, { glideRatio: summary.worstGlideRatio })]
+                : []
+        }));
     }
 
     // Safety/Mindset - core message with additional context
-    coaching.safetyMindset.push(
-        'Turbulence discomfort is normal. Breathe, loosen grip, and re-center before leaving lift.'
-    );
+    coaching.safetyMindset.push(makeCoachingItem({
+        id: 'safety-breathe',
+        text: 'Turbulence discomfort is normal. Breathe, loosen grip, and re-center before leaving lift.',
+        evidence: bestEvidence ? [bestEvidence] : [flightEvidence]
+    }));
     if (summary.gpsGaps > 0) {
-        coaching.safetyMindset.push(`⚠ GPS signal gaps detected (${summary.gpsGaps}).`);
+        coaching.safetyMindset.push(makeCoachingItem({
+            id: 'safety-gps-gaps',
+            text: `GPS signal gaps detected (${summary.gpsGaps}).`,
+            evidence: [makeEvidence({
+                id: 'gps-gaps-evidence',
+                label: 'GPS quality',
+                detail: `${summary.gpsGaps} gap(s) detected`,
+                metric: { gpsGaps: summary.gpsGaps }
+            })]
+        }));
     }
 
     // Next-flight plan - actionable based on performance
     if (best && best.maxClimb >= 1.2) {
-        coaching.nextFlightPlan.push('When climb ≥ +1.2 m/s, stay for two additional circles before leaving.');
+        coaching.nextFlightPlan.push(makeCoachingItem({
+            id: 'plan-stay-two-circles',
+            text: 'When climb is +1.2 m/s or better, stay for two additional circles before leaving.',
+            evidence: bestEvidence ? [bestEvidence] : [],
+            priority: 'primary'
+        }));
     } else {
-        coaching.nextFlightPlan.push('Pick one strong trigger; explore thoroughly before moving on.');
+        coaching.nextFlightPlan.push(makeCoachingItem({
+            id: 'plan-one-trigger',
+            text: 'Pick one strong trigger; explore thoroughly before moving on.',
+            evidence: [flightEvidence],
+            priority: 'primary'
+        }));
     }
 
     // Wind awareness for next flight
     if (wind && wind.confidence > 0.4) {
-        coaching.nextFlightPlan.push(
-            `Estimated wind: ${Math.round(wind.speed)} km/h from ${wind.directionCompass} ` +
-            `(confidence: ${Math.round(wind.confidence * 100)}%). Consider headwind when planning glides.`
-        );
+        const windThermal = wind.supportingThermals && wind.supportingThermals[0]
+            ? wind.supportingThermals[0].thermal
+            : null;
+        const windThermalIndex = windThermal ? summary.segments.indexOf(windThermal) : -1;
+        const windEvidence = windThermalIndex >= 0
+            ? getThermalEvidence(summary, windThermal, windThermalIndex, 'Thermal drift estimate', { windSpeed: wind.speed, confidence: wind.confidence })
+            : makeEvidence({
+                id: 'wind-estimate-evidence',
+                label: 'Wind estimate',
+                detail: `${Math.round(wind.speed)} km/h, ${Math.round(wind.confidence * 100)}% confidence`,
+                metric: { windSpeed: wind.speed, confidence: wind.confidence, samples: wind.samples }
+            });
+        coaching.nextFlightPlan.push(makeCoachingItem({
+            id: 'plan-wind-awareness',
+            text: `Estimated wind: ${Math.round(wind.speed)} km/h from ${wind.directionCompass} ` +
+                `(confidence: ${Math.round(wind.confidence * 100)}%). Consider headwind when planning glides.`,
+            evidence: [windEvidence]
+        }));
     }
 
     // Speedbar practice recommendation
     if (speedbarOps.length > 2) {
-        coaching.nextFlightPlan.push(
-            'Practice using speedbar in headwinds and sink - it could significantly improve your glide efficiency.'
-        );
+        const firstOp = speedbarOps[0];
+        const glideIndex = glides.indexOf(firstOp.glide);
+        coaching.nextFlightPlan.push(makeCoachingItem({
+            id: 'plan-speedbar-practice',
+            text: 'Practice using speedbar in headwinds and sink - it could significantly improve your glide efficiency.',
+            evidence: glideIndex >= 0
+                ? [getGlideEvidence(summary, firstOp.glide, glideIndex, firstOp.reasons.join(', '), firstOp.estimatedBenefit)]
+                : []
+        }));
     }
+
+    coaching.quickDebrief.whatWentWell = coaching.whatWentWell[0] || null;
+    coaching.quickDebrief.altitudeCost = coaching.whatToImprove[0] || null;
+    coaching.quickDebrief.nextAction = coaching.nextFlightPlan[0] || null;
+    coaching.summary = {
+        primaryAction: coaching.quickDebrief.nextAction ? getCoachingText(coaching.quickDebrief.nextAction) : '',
+        evidenceCount: [
+            ...coaching.whatWentWell,
+            ...coaching.whatToImprove,
+            ...coaching.safetyMindset,
+            ...coaching.nextFlightPlan
+        ].reduce((sum, item) => sum + (typeof item === 'string' ? 0 : item.evidence.length), 0)
+    };
 
     return coaching;
 }

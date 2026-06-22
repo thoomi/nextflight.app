@@ -486,8 +486,8 @@ class CesiumRenderer {
                     startIdx = i;
                     endIdx = i;
                     currentPositions = [Cesium.Cartesian3.fromDegrees(p.lon, p.lat, renderHeights[i])];
-                } else if (!color.equals(currentColor) || thermalIdx !== currentThermalIdx) {
-                    // Color or thermal changed - finish current segment
+                } else if (!color.equals(currentColor) || thermalIdx !== currentThermalIdx || glideIdx !== currentGlideIdx) {
+                    // Color or segment membership changed - finish current segment
                     endIdx = i;
                     currentPositions.push(Cesium.Cartesian3.fromDegrees(p.lon, p.lat, renderHeights[i]));
                     createSegment();

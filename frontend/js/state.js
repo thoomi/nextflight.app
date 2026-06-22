@@ -21,6 +21,7 @@ class AppState {
 
         // Selection state
         this.selectedThermalIndex = -1;
+        this.selectedGlideIndex = null;
         this.selectedAnnotationId = null;
 
         // Annotation state

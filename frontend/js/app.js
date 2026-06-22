@@ -329,13 +329,13 @@ function clearThermalSelection() {
  * Fly camera to thermal
  * @param {ThermalSegment} thermal - Thermal segment
  */
-function flyToThermal(thermal) {
+function flyToThermal(thermal, { seekToSegment = true } = {}) {
     if (!appState.hasFlightData()) return;
 
     const points = appState.currentAnalysis.points;
 
     // If replay hasn't reached this thermal yet, jump to the end of the thermal
-    if (appState.replay.totalDuration > 0 && appState.replay.currentPointIndex < thermal.endIdx) {
+    if (seekToSegment && appState.replay.totalDuration > 0 && appState.replay.currentPointIndex < thermal.endIdx) {
         const thermalEndTime = points[thermal.endIdx].timeS - points[0].timeS;
         seekReplay(thermalEndTime);
     }
@@ -429,13 +429,13 @@ function clearGlideSelection() {
  * Fly camera to glide
  * @param {GlideSegment} glide - Glide segment
  */
-function flyToGlide(glide) {
+function flyToGlide(glide, { seekToSegment = true } = {}) {
     if (!appState.hasFlightData()) return;
 
     const points = appState.currentAnalysis.points;
 
     // If replay hasn't reached this glide yet, jump to the end of the glide
-    if (appState.replay.totalDuration > 0 && appState.replay.currentPointIndex < glide.endIdx) {
+    if (seekToSegment && appState.replay.totalDuration > 0 && appState.replay.currentPointIndex < glide.endIdx) {
         const glideEndTime = points[glide.endIdx].timeS - points[0].timeS;
         seekReplay(glideEndTime);
     }
@@ -529,26 +529,9 @@ function unhighlightGlideTrack() {
 function updateTrailThermalHighlight(thermalIndex) {
     if (!appState.replay.trailPolylines || !appState.hasFlightData()) return;
 
-    const segments = appState.currentAnalysis.segments;
-    const interpVario = appState.replay.interpolatedVario;
-    const factor = appState.replay.interpolationFactor + 1;
-
-    // Map which interpolated indices belong to which thermal
-    const interpToThermal = new Array(interpVario.length).fill(-1);
-    segments.forEach((thermal, idx) => {
-        const startInterp = thermal.startIdx * factor;
-        const endInterp = Math.min(thermal.endIdx * factor + factor, interpVario.length - 1);
-        for (let i = startInterp; i <= endInterp; i++) {
-            interpToThermal[i] = idx;
-        }
-    });
-
     // Update each polyline's color based on whether it's in the highlighted thermal
     appState.replay.colorSegments.forEach((seg, idx) => {
         const polyline = appState.replay.trailPolylines[idx];
-
-        // Check if this segment belongs to the highlighted thermal
-        const segThermalIdx = interpToThermal[seg.startIdx];
 
         if (thermalIndex === -1) {
             // No highlight - restore original color and width
@@ -556,7 +539,7 @@ function updateTrailThermalHighlight(thermalIndex) {
                 color: seg.color
             });
             polyline.width = 3;
-        } else if (segThermalIdx === thermalIndex) {
+        } else if (seg.thermalIndex === thermalIndex) {
             // This segment is in the highlighted thermal - show bright
             polyline.material = Cesium.Material.fromType('Color', {
                 color: seg.color
@@ -582,25 +565,9 @@ function updateTrailGlideHighlight(glideIndex) {
     const glides = appState.currentAnalysis.glides;
     if (!glides || glides.length === 0) return;
 
-    const interpVario = appState.replay.interpolatedVario;
-    const factor = appState.replay.interpolationFactor + 1;
-
-    // Map which interpolated indices belong to which glide
-    const interpToGlide = new Array(interpVario.length).fill(-1);
-    glides.forEach((glide, idx) => {
-        const startInterp = glide.startIdx * factor;
-        const endInterp = Math.min(glide.endIdx * factor + factor, interpVario.length - 1);
-        for (let i = startInterp; i <= endInterp; i++) {
-            interpToGlide[i] = idx;
-        }
-    });
-
     // Update each polyline's color based on whether it's in the highlighted glide
     appState.replay.colorSegments.forEach((seg, idx) => {
         const polyline = appState.replay.trailPolylines[idx];
-
-        // Check if this segment belongs to the highlighted glide
-        const segGlideIdx = interpToGlide[seg.startIdx];
 
         if (glideIndex === -1) {
             // No highlight - restore original color and width
@@ -608,7 +575,7 @@ function updateTrailGlideHighlight(glideIndex) {
                 color: seg.color
             });
             polyline.width = 3;
-        } else if (segGlideIdx === glideIndex) {
+        } else if (seg.glideIndex === glideIndex) {
             // This segment is in the highlighted glide - show bright
             polyline.material = Cesium.Material.fromType('Color', {
                 color: seg.color
@@ -634,8 +601,15 @@ function updateCoachingPanel(analysis) {
         domCache,
         ids: DOM_IDS,
         cssClasses: CSS_CLASSES,
-        onStartWalkthrough: startWalkthrough
+        onStartWalkthrough: startWalkthrough,
+        onEvidenceSelect: handleCoachingEvidenceSelect
     });
+}
+
+function handleCoachingEvidenceSelect(target) {
+    if (!appState.hasFlightData()) return;
+
+    performWalkthroughJump(target);
 }
 
 /**
@@ -715,12 +689,17 @@ function performWalkthroughJump(target) {
     switch (target.type) {
         case 'thermal': {
             // Jump to specific thermal
-            if (analysis.segments && target.index < analysis.segments.length) {
+            if (analysis.segments && Number.isInteger(target.index) && target.index < analysis.segments.length) {
                 const thermal = analysis.segments[target.index];
-                const endTime = points[thermal.endIdx].timeS - points[0].timeS;
+                const endTime = target.timeS !== null && target.timeS !== undefined
+                    ? target.timeS
+                    : points[thermal.endIdx].timeS - points[0].timeS;
 
                 // Seek to the end of the thermal (where you can see the full context)
                 seekReplay(endTime);
+                selectThermal(target.index);
+                clearGlideListSelection();
+                flyToThermal(thermal, { seekToSegment: false });
 
                 // Highlight on chart if available
                 if (appState.altitudeChart) {
@@ -732,12 +711,17 @@ function performWalkthroughJump(target) {
 
         case 'glide': {
             // Jump to specific glide
-            if (analysis.glides && target.index < analysis.glides.length) {
+            if (analysis.glides && Number.isInteger(target.index) && target.index < analysis.glides.length) {
                 const glide = analysis.glides[target.index];
                 const midPoint = Math.floor((glide.startIdx + glide.endIdx) / 2);
-                const midTime = points[midPoint].timeS - points[0].timeS;
+                const midTime = target.timeS !== null && target.timeS !== undefined
+                    ? target.timeS
+                    : points[midPoint].timeS - points[0].timeS;
 
                 seekReplay(midTime);
+                selectGlide(target.index);
+                clearThermalListSelection();
+                flyToGlide(glide, { seekToSegment: false });
 
                 // Highlight on chart
                 if (appState.altitudeChart) {
@@ -753,6 +737,7 @@ function performWalkthroughJump(target) {
             const targetTime = totalDuration * target.ratio;
 
             seekReplay(targetTime);
+            clearSegmentListSelections();
 
             // Clear any chart highlights
             if (appState.altitudeChart) {
@@ -763,13 +748,52 @@ function performWalkthroughJump(target) {
 
         case 'point': {
             // Jump to specific point index
-            if (target.index < points.length) {
-                const targetTime = points[target.index].timeS - points[0].timeS;
+            if (Number.isInteger(target.index) && target.index < points.length) {
+                const targetTime = target.timeS !== null && target.timeS !== undefined
+                    ? target.timeS
+                    : points[target.index].timeS - points[0].timeS;
                 seekReplay(targetTime);
+                clearSegmentListSelections();
             }
             break;
         }
     }
+}
+
+function clearThermalListSelection() {
+    appState.clearThermalSelection();
+    document.querySelectorAll(`.${CSS_CLASSES.thermalItem}`).forEach((item) => {
+        if (item.hasAttribute(DATA_ATTRS.thermalIndex)) {
+            item.classList.remove(CSS_CLASSES.active);
+        }
+    });
+}
+
+function clearGlideListSelection() {
+    appState.selectedGlideIndex = null;
+    document.querySelectorAll('[data-glide-index]').forEach((item) => {
+        item.classList.remove(CSS_CLASSES.active);
+    });
+}
+
+function clearSegmentListSelections() {
+    clearThermalListSelection();
+    clearGlideListSelection();
+    restoreTrackColors();
+    if (appState.altitudeChart) {
+        appState.altitudeChart.clearHighlight();
+    }
+}
+
+function restoreTrackColors() {
+    if (!appState.renderer) return;
+
+    if (appState.replay.trailCollection && appState.replay.trailPolylines.length > 0) {
+        updateTrailThermalHighlight(-1);
+        return;
+    }
+
+    appState.renderer.unhighlightAll();
 }
 
 /**
@@ -986,6 +1010,13 @@ function setupBottomBarResize() {
  * @param {string} tabName - Name of the tab ('upload', 'info', 'thermals', 'notes')
  */
 function switchToTab(tabName) {
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || null;
+    const isChangingTab = activeTab !== null && activeTab !== tabName;
+
+    if (isChangingTab && appState.hasFlightData()) {
+        clearSegmentListSelections();
+    }
+
     // Update active tab button
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
@@ -1223,7 +1254,7 @@ function handleAltitudeChartClick(pointIndex, point) {
     if (appState.replay.totalDuration > 0) {
         const startTime = appState.currentAnalysis.points[0].timeS;
         const clickedTime = point.timeS - startTime;
-        seekReplay(clickedTime);
+        seekReplayFromUser(clickedTime, { flyToPoint: true });
 
         // Clear the altitude chart's selected point (we're using replay indicator)
         if (appState.altitudeChart) {
@@ -1717,20 +1748,20 @@ function setupReplayControls() {
     });
 
     // Click on timeline
-    timeline.addEventListener('click', handleTimelineScrub);
+    timeline.addEventListener('click', (e) => handleTimelineScrub(e, { flyToPoint: true }));
 }
 
 /**
  * Handle timeline scrubbing
  * @param {MouseEvent} e - Mouse event
  */
-function handleTimelineScrub(e) {
+function handleTimelineScrub(e, { flyToPoint = false } = {}) {
     const timeline = domCache.get(DOM_IDS.replayTimeline);
     const rect = timeline.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
     const newTime = percentage * appState.replay.totalDuration;
-    seekReplay(newTime);
+    seekReplayFromUser(newTime, { flyToPoint: flyToPoint && !appState.replay.isPlaying });
 }
 
 /**
@@ -1795,21 +1826,46 @@ function createReplayTrailEntity() {
     // Group interpolated points by color
     const segments = [];
     let currentColor = null;
+    let currentThermalIndex = -1;
+    let currentGlideIndex = -1;
     let segmentStart = 0;
+    const factor = appState.replay.interpolationFactor + 1;
+    const interpToThermal = buildInterpolatedSegmentIndexMap({
+        length: interpPoints.length,
+        factor,
+        segments: appState.currentAnalysis.segments || []
+    });
+    const interpToGlide = buildInterpolatedSegmentIndexMap({
+        length: interpPoints.length,
+        factor,
+        segments: appState.currentAnalysis.glides || []
+    });
 
     for (let i = 0; i < interpPoints.length; i++) {
         const color = appState.renderer.getColorFromVario(interpVario[i]);
+        const thermalIndex = interpToThermal[i];
+        const glideIndex = interpToGlide[i];
 
         if (currentColor === null) {
             currentColor = color;
+            currentThermalIndex = thermalIndex;
+            currentGlideIndex = glideIndex;
             segmentStart = i;
-        } else if (!color.equals(currentColor)) {
+        } else if (
+            !color.equals(currentColor) ||
+            thermalIndex !== currentThermalIndex ||
+            glideIndex !== currentGlideIndex
+        ) {
             segments.push({
                 startIdx: segmentStart,
                 endIdx: i,
-                color: currentColor
+                color: currentColor,
+                thermalIndex: currentThermalIndex,
+                glideIndex: currentGlideIndex
             });
             currentColor = color;
+            currentThermalIndex = thermalIndex;
+            currentGlideIndex = glideIndex;
             segmentStart = i;
         }
     }
@@ -1817,7 +1873,9 @@ function createReplayTrailEntity() {
         segments.push({
             startIdx: segmentStart,
             endIdx: interpPoints.length - 1,
-            color: currentColor
+            color: currentColor,
+            thermalIndex: currentThermalIndex,
+            glideIndex: currentGlideIndex
         });
     }
 
@@ -1838,6 +1896,20 @@ function createReplayTrailEntity() {
             show: false
         });
     });
+}
+
+function buildInterpolatedSegmentIndexMap({ length, factor, segments }) {
+    const indexMap = new Array(length).fill(-1);
+
+    segments.forEach((segment, index) => {
+        const startInterp = segment.startIdx * factor;
+        const endInterp = Math.min(segment.endIdx * factor + factor, length - 1);
+        for (let i = startInterp; i <= endInterp; i++) {
+            indexMap[i] = index;
+        }
+    });
+
+    return indexMap;
 }
 
 /**
@@ -2064,6 +2136,30 @@ function seekReplay(time) {
     updateReplayUI();
     updateAircraftPosition();
     updateTrackVisibility();
+}
+
+function seekReplayFromUser(time, { flyToPoint = false } = {}) {
+    clearSegmentListSelections();
+    seekReplay(time);
+
+    if (flyToPoint) {
+        flyToCurrentReplayPoint();
+    }
+}
+
+function flyToCurrentReplayPoint() {
+    if (!appState.renderer || !appState.hasFlightData()) return;
+
+    const points = appState.currentAnalysis.points;
+    const pointIndex = appState.replay.currentPointIndex || 0;
+    const point = points[pointIndex];
+    if (!point) return;
+
+    const height = appState.currentAnalysis.calculatedHeights?.[pointIndex] || point.altM;
+    appState.renderer.flyToPosition(point.lon, point.lat, height, {
+        range: Math.max(APP_CONFIG.camera.defaultRange * 2.5, 2000),
+        duration: APP_CONFIG.camera.quickFlyDuration
+    });
 }
 
 /**
