@@ -27,10 +27,8 @@ security-sensitive.
 3. **Verify**
    - App-code changes: `npm run build` and `npm run test:smoke`.
    - JS/module changes: also run `npm run check:syntax`.
-   - Page HTML, analyzer/Flight Art UI, parser/analyzer core, or canvas rendering:
+   - Page HTML, analyzer UI, parser/analyzer core, or canvas rendering:
      also run `npm run test:e2e`.
-   - `frontend/js/cloud/` or `supabase/`: also run `npm run test:e2e:cloud` when the
-     local Supabase stack is available.
    - Do not advance with a failing build or smoke test.
 
 4. **Review**

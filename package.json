@@ -13,22 +13,15 @@
     "precommit": "lint-staged",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:cloud": "playwright test --project=cloud",
-    "db:start": "npx supabase start",
-    "db:reset": "npx supabase db reset"
+    "test:e2e:ui": "playwright test --ui"
   },
   "lint-staged": {
     "frontend/js/**/*.js": "node --check"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
-    "supabase": "2.107.0",
     "vite": "^8.0.16"
   }
 }

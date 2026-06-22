@@ -36,8 +36,7 @@ $ARGUMENTS
 3. **Verify hard gates.**
    - Always require `npm run build` and `npm run test:smoke` for app-code changes.
    - Run `npm run check:syntax` for JS/module changes.
-   - Run `npm run test:e2e` after page HTML, analyzer/Flight Art UI, parser/analyzer core, or canvas rendering changes.
-   - Run `npm run test:e2e:cloud` after `frontend/js/cloud/` or `supabase/` changes.
+   - Run `npm run test:e2e` after page HTML, analyzer UI, parser/analyzer core, or canvas rendering changes.
    - Do not advance with a failing build or smoke test.
 
 4. **Review only when it buys signal.**

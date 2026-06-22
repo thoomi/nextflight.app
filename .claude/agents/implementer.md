@@ -26,8 +26,7 @@ the implementation, stop and ask the orchestrator for the missing decision.
 Run the narrowest complete set:
 - App-code changes: `npm run build` and `npm run test:smoke`.
 - JS/module changes: add `npm run check:syntax`.
-- Page HTML, analyzer/Flight Art UI, parser/analyzer core, or canvas rendering: add `npm run test:e2e`.
-- `frontend/js/cloud/` or `supabase/`: add `npm run test:e2e:cloud` when the local stack is available.
+- Page HTML, analyzer UI, parser/analyzer core, or canvas rendering: add `npm run test:e2e`.
 
 Do not report done if build or smoke fails. Fix the failure or explain the blocker.
 

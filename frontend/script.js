@@ -1,5 +1,3 @@
-import { initFlightArtGallery } from './js/art/landing-gallery.js';
-
 // Year in footer
 const yearEl = document.getElementById('year');
 if (yearEl) {
@@ -25,5 +23,3 @@ if (menuBtn && mobileMenu) {
     });
   });
 }
-
-initFlightArtGallery();

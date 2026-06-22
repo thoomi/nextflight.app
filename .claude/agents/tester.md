@@ -14,7 +14,7 @@ structure. You are read-only and never edit product code.
 3. For visible behavior not covered by e2e, run the app and inspect it with Playwright:
    - Start dev server: `npm run dev -- --host 127.0.0.1 --port 8765 >/tmp/dev.log 2>&1 &`
    - Poll `curl -sf http://127.0.0.1:8765/` until ready.
-   - Pages: `/`, `/app.html`, `/art.html`, `/concept.html`.
+   - Pages: `/`, `/app.html`, `/concept.html`.
    - Put any temporary screenshot script inside the repo, not `/tmp`, so ESM resolves `@playwright/test`.
    - Capture console/page errors and screenshots for the relevant viewport(s).
    - Inspect the PNG before judging the UI.
