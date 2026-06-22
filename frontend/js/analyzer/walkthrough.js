@@ -9,18 +9,37 @@ function buildWalkthroughItems(coaching, analysis) {
     const items = [];
 
     WALKTHROUGH_SECTIONS.forEach((section) => {
-        coaching[section.key].forEach((text) => {
+        coaching[section.key].forEach((item) => {
+            const normalized = normalizeWalkthroughCoachingItem(item);
             items.push({
                 type: section.type,
                 icon: section.icon,
-                text,
+                text: normalized.text,
                 color: section.color,
-                jumpTarget: detectJumpTarget(text, analysis)
+                jumpTarget: normalized.jumpTarget || detectJumpTarget(normalized.text, analysis)
             });
         });
     });
 
     return items;
+}
+
+function normalizeWalkthroughCoachingItem(item) {
+    if (typeof item === 'string') {
+        return {
+            text: item,
+            jumpTarget: null
+        };
+    }
+
+    const firstTarget = (item.evidence || [])
+        .map((evidence) => evidence.target)
+        .find(Boolean);
+
+    return {
+        text: item.text || '',
+        jumpTarget: firstTarget
+    };
 }
 
 function detectJumpTarget(text, analysis) {
