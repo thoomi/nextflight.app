@@ -1,16 +1,13 @@
 # Architecture
 
-> Written for whoever works on this repository next, human or agent. Martomatic
-> reads nothing structured from this file; it is prose on purpose, because no
-> fixed set of fields would fit every project.
+NextFlight is a framework-free static frontend built from HTML, CSS, and ES modules.
+Vite treats `frontend/` as a multi-page source root for the landing, concept, and
+flight-analyzer pages. `npm run build` writes the generated site to `dist/`, then
+`scripts/copy-static-assets.cjs` copies the source assets, styles, modules, samples,
+and crawler files that Vite does not emit itself. Vercel publishes `dist/` according
+to `vercel.json`; `.github/workflows/deploy.yml` runs the production deployment.
 
-Replace this file with a description of what this project actually is. Useful
-things to state, when they are true:
-
-- what the site or application is built with, and what it is deployed on
-- whether there is a build step, and what produces the published output
-- where the published output lives in this repository
-- which directories matter, and which are generated or vendored
-- anything an agent would otherwise infer wrongly on its first read
-
-Keep it short and current. A stale description is worse than none.
+Application source is under `frontend/`, build helpers under `scripts/`, and smoke
+and Playwright coverage under `tests/`. `dist/` and `node_modules/` are generated and
+are not source. See `README.md` for setup and deployment, and `AGENTS.md` plus
+`docs/dev-loop.md` for the repository map and development checks.

@@ -28,7 +28,13 @@ workflow:
 # Named commands this repository actually runs, in its own terms -- `make site`,
 # `npm test`, `./deploy.sh`, whatever is true here. This is also the authority
 # boundary: a command that is not declared is not a command a worker may run.
-commands: {}
+commands:
+  build: npm run build
+  check: npm run check:syntax
+  dev: npm run dev
+  preview: npm run preview
+  smoke: npm run test:smoke
+  test: npm run test:e2e
 
 owners:
   primary: thoomi
