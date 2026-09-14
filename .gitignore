@@ -62,3 +62,4 @@ share/python-wheels/
 # Playwright
 test-results/
 playwright-report/
+.worktrees/
