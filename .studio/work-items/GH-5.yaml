@@ -1,0 +1,34 @@
+schema_version: 1
+id: GH-5
+project_id: nextflight-app
+workflow: issue-to-pr
+stage: implement
+status: review
+ownership:
+  human_owner: thoomi
+  execution_machine: DESKTOP-H50LLKC
+  claimed_at: '2026-09-14T12:29:22+00:00'
+  lease_minutes: 120
+execution:
+  profile: studio
+  base_commit: 40054fd9294d64daa3301c6abbd38a8b1995da08
+  branch: work/nextflight-app/GH-5-studio-describe-how-this-repository-is-b
+  target_environment: none
+  cards:
+  - role: studio
+    id: t_6ccbaa1a
+objective: '[Studio]: Describe how this repository is built'
+inputs:
+- https://github.com/thoomi/nextflight.app/issues/5
+acceptance:
+- The acceptance criteria stated in https://github.com/thoomi/nextflight.app/issues/5
+  are met.
+allowed_changes: []
+forbidden_changes: []
+limits:
+  max_iterations: 2
+  max_runtime_minutes: 60
+approval:
+  required: true
+  approver: thoomi
+handoff: .studio/handoffs/GH-5.yaml
