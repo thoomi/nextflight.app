@@ -1,0 +1,92 @@
+name: Studio task
+description: Request website, content, SEO, design, implementation, or maintenance work.
+title: "[Studio]: "
+labels:
+  - studio:intake
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the outcome, not implementation instructions. Creating this issue does not start agents or authorize a production deployment. Never paste passwords, tokens, private keys, or other secrets here.
+
+  - type: dropdown
+    id: task_type
+    attributes:
+      label: Task type
+      options:
+        - Bug or regression
+        - Content update
+        - SEO audit or optimization
+        - Design or prototype
+        - Website feature
+        - New Bricks website
+        - Maintenance or monitoring
+        - Other scoped website work
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should be true when this task is complete?
+      placeholder: Visitors can find the new team member and the page remains correct on mobile.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and current state
+      description: Explain the request, problem, business reason, and relevant history.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable checks that determine whether the result is acceptable.
+      placeholder: |
+        - Team page contains the approved name, role, biography, and image.
+        - Layout works at 320 px and larger.
+        - Existing team entries remain unchanged.
+    validations:
+      required: true
+
+  - type: input
+    id: affected_urls
+    attributes:
+      label: Affected pages or URLs
+      description: Add URLs or page names, separated by commas. Use "unknown" when discovery is part of the task.
+    validations:
+      required: true
+
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Inputs, assets, and references
+      description: Link approved repository files or private storage references. Drag non-secret files here only when repository policy permits it.
+
+  - type: dropdown
+    id: target_environment
+    attributes:
+      label: Requested target
+      options:
+        - Analysis or proposal only
+        - Clickable prototype
+        - Staging implementation
+        - Production change requested (separate approval required)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have not included credentials or secrets in this issue.
+          required: true
+        - label: I understand that production deployment requires a separate explicit approval.
+          required: true
+

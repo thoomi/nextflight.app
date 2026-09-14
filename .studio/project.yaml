@@ -1,0 +1,60 @@
+# Martomatic project manifest.
+#
+# `martomatic project init` writes this file once and never rewrites it: from here
+# on it belongs to the repository.
+#
+# Nothing here describes how the project is built. This repository may be a
+# WordPress site, a plain HTML page, or anything else; Martomatic does not need to
+# know, and guessing would be worse than not knowing. Describe the implementation
+# in `.studio/context/architecture.md` instead, in your own words.
+#
+# Every `PLACEHOLDER` below is a value only you can supply. The file validates as
+# written, so `martomatic validate .` passes before you have filled anything in --
+# a pass means the shape is right, not that the values are true.
+
+schema_version: 1
+studio_release: 0.2.1
+
+project:
+  id: nextflight-app
+  name: Nextflight App
+  # intake | active | waiting | review | launched | maintenance | archived
+  status: intake
+
+workflow:
+  name: issue-to-pr
+  version: 0.1.0
+
+# Named commands this repository actually runs, in its own terms -- `make site`,
+# `npm test`, `./deploy.sh`, whatever is true here. This is also the authority
+# boundary: a command that is not declared is not a command a worker may run.
+commands: {}
+
+owners:
+  primary: thoomi
+  collaborators: []
+  approvers:
+    - thoomi
+
+repositories:
+  project: https://github.com/thoomi/nextflight.app.git
+
+# The environments this project actually has, under whatever names it uses. A
+# repository with nothing to deploy to leaves this empty. `write_policy` is what
+# restrains a worker: none, approved-task, or human-only.
+#
+#   environments:
+#     staging:
+#       url: https://staging.example.com
+#       credential_ref: vault://example/staging
+#       write_policy: approved-task
+environments: {}
+
+# Credential aliases, never credential values.
+integrations: {}
+
+# Production approval is required by the contract and cannot be turned off.
+approvals:
+  design: true
+  content: true
+  production: true
