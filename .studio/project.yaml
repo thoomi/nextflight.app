@@ -6,7 +6,7 @@
 # Nothing here describes how the project is built. This repository may be a
 # WordPress site, a plain HTML page, or anything else; Martomatic does not need to
 # know, and guessing would be worse than not knowing. Describe the implementation
-# in `.studio/context/architecture.md` instead, in your own words.
+# in the repository's own docs instead -- its README or AGENTS.md.
 #
 # Every `PLACEHOLDER` below is a value only you can supply. The file validates as
 # written, so `martomatic validate .` passes before you have filled anything in --
@@ -24,11 +24,6 @@ project:
 workflow:
   name: issue-to-pr
   version: 0.1.0
-
-# Named commands this repository actually runs, in its own terms -- `make site`,
-# `npm test`, `./deploy.sh`, whatever is true here. This is also the authority
-# boundary: a command that is not declared is not a command a worker may run.
-commands: {}
 
 owners:
   primary: thoomi
